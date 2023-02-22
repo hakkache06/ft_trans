@@ -12,12 +12,20 @@ datasource db {
 
 model User {
   id  Int  @unique @default(autoincrement()) @id
-  name  String
-  avatar  String
-  Fa_2    Boolean
-  intraid Int
-  xp      String
-  wins     Int
-  loses     Int
-  createdAt DateTime @default(now())
+  ///name  String
+  email String @unique
+  password  String
+  ///avatar  String
+  //Fa_2    Boolean
+  //ntraid Int
+  //xp      String
+  //wins     Int
+  //loses     Int
+  //reatedAt DateTime @default(now())
 }
+
+
+//userId int
+// user User @relation(fileds: [userId] , refernces : [id])
+
+// re   res

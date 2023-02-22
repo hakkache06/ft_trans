@@ -4,7 +4,6 @@ import { AuthService } from './auth.service';
 
 // Create module
 @Module({
-  //imports: [PrismaModule],
   controllers: [AuthController],
   providers: [AuthService],
 })
