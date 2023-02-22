@@ -24,8 +24,10 @@ export class AuthService {
       delete user.password;
       return user;
     } catch (error) {
-      if(error instanceof PrismaClientUnknownRequestError)
-         
+      if (error instanceof PrismaClientUnknownRequestError)
+        return {
+          message: 'Error From prisma',
+        };
     }
   }
   signin() {

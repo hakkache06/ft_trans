@@ -11,19 +11,70 @@ datasource db {
 }
 
 model User {
-  id  Int  @unique @default(autoincrement()) @id
-  ///name  String
-  email String @unique
-  password  String
-  ///avatar  String
-  //Fa_2    Boolean
-  //ntraid Int
-  //xp      String
-  //wins     Int
-  //loses     Int
-  //reatedAt DateTime @default(now())
+  id     Int     @unique @default(autoincrement())
+  name   String
+  // email String @unique
+  // password  String
+  avatar String
+  Fa_2   Boolean
+  ntraid Int
+  xp     String
+  wins   Int
+  loses  Int
+
+  Friends    Friends?
+  Gammes     Gammes[]
+  Romms      Romms[]
+  Romms_user Romms_user[]
+  Messages   Messages[]
 }
 
+model Friends {
+  user     User    @relation(fields: [From_id], references: [id])
+  From_id  Int     @unique
+  To_id    Int
+  Accepted Boolean @default(false)
+}
+
+model Gammes {
+  id             Int    @unique
+  background     String
+  user           User   @relation(fields: [playerone_id], references: [id])
+  playerone_id   Int
+  playertwo_id   Int
+  playeronescore Int
+  plyaertwoscore Int
+}
+
+model Romms {
+  id            Int         @id @unique @default(autoincrement())
+  password      String
+  type          String      @default("public")
+  user          User        @relation(fields: [id_user_owner], references: [id])
+  id_user_owner Int
+  Romms_user    Romms_user?
+  Messages      Messages[]
+}
+
+model Romms_user {
+  user    User     @relation(fields: [user_id], references: [id])
+  user_id Int      @unique
+  rooms   Romms    @relation(fields: [room_id], references: [id])
+  room_id Int      @unique
+  admin   Boolean
+  ban     Boolean
+  mute    DateTime
+}
+
+model Messages {
+  id         Int      @id @unique @default(autoincrement())
+  content    String
+  created_at DateTime
+  rooms      Romms    @relation(fields: [room_id], references: [id])
+  room_id    Int
+  user       User     @relation(fields: [from_id], references: [id])
+  from_id    Int
+}
 
 //userId int
 // user User @relation(fileds: [userId] , refernces : [id])
