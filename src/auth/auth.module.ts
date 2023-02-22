@@ -6,11 +6,10 @@ import { PrismaModule } from '../prisma/prisma.module';
 @Module({
   imports: [PrismaModule],
   controllers: [AuthController],
-  providers: [AuthService]
+  providers: [AuthService],
 })
-export class AuthModule implements NestModule{
+export class AuthModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-     consumer.apply()
-  }  
-
+    consumer.apply();
+  }
 }
