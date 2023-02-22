@@ -8,6 +8,7 @@ import { RoomsUsersModule } from './rooms_users/rooms_users.module';
 import { FriendsModule } from './friends/friends.module';
 import { GammesModule } from './gammes/gammes.module';
 import { MessagesModule } from './messages/messages.module';
+import { MulterModule } from '@nestjs/platform-express';
 
 @Module({
   imports: [

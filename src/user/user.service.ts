@@ -54,4 +54,21 @@ export class UserService {
       });
     }
   }
+
+  async deleteUserbyId(idUser: string, res) {
+    try {
+      const fetchByid = await this.prisma.user.delete({
+        where: {
+          id: idUser,
+        },
+      });
+      res.send({
+        fetchByid,
+      });
+    } catch (error) {
+      res.send({
+        meassge: 'error fom prisma',
+      });
+    }
+  }
 }
