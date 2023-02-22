@@ -9,11 +9,12 @@ export class UserController {
   fetchAlluser(@Body() b, @Res() res: Response) {
     return this.userService.fetchAlluser(b, res);
   }
+  //fetchByid
   @Get(':id')
   getOneUser(@Param('id') idUser: string, @Res() res: Response) {
     return this.userService.getOneUser(idUser, res);
   }
-
+  //updateUser by Id
   @Patch(':id')
   updateUserbyId(@Param('id') idUser: string, @Body() b, @Res() res: Response) {
     return this.userService.updateUserbyId(idUser, b, res);
