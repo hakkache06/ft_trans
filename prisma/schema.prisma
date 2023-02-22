@@ -11,37 +11,41 @@ datasource db {
 }
 
 model User {
-  id     Int     @unique @default(autoincrement())
-  name   String
+  id      Int     @unique @default(autoincrement())
+  name    String
   // email String @unique
   // password  String
-  avatar String
-  Fa_2   Boolean @default(false)
+  avatar  String
+  Fa_2    Boolean @default(false)
   Intraid Int
-  xp     String
-  wins   Int
-  loses  Int
+  xp      String
+  wins    Int
+  loses   Int
 
-  Friends    Friends?
-  Gammes     Gammes[]
+  Friends    Friends[]    @relation("from")
+  Friendsto  Friends?     @relation("to")
+  Gammes     Gammes[]     @relation("playerone")
+  Gammesq    Gammes?      @relation("playertwo")
   Romms      Romms[]
   Romms_user Romms_user[]
   Messages   Messages[]
 }
 
 model Friends {
-  user     User    @relation(fields: [From_id], references: [id])
+  user1    User?   @relation("from", fields: [From_id], references: [id])
+  user2    User?   @relation("to", fields: [To_id], references: [id])
   From_id  Int     @unique
-  To_id    Int
+  To_id    Int     @unique
   Accepted Boolean @default(false)
 }
 
 model Gammes {
   id             Int    @unique
   background     String
-  user           User   @relation(fields: [playerone_id,playert], references: [id])
-  playerone_id   Int
-  playertwo_id   Int
+  user1          User?  @relation("playerone", fields: [playerone_id], references: [id])
+  user2          User?  @relation("playertwo", fields: [playertwo_id], references: [id])
+  playerone_id   Int    @unique
+  playertwo_id   Int    @unique
   playeronescore Int
   plyaertwoscore Int
 }
