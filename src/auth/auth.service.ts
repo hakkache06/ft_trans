@@ -25,21 +25,26 @@ export class AuthService {
             }
         })).data
 
-        const user_id : string = data.id;
-        const user_email : string = data.email;
-        const user_avatar : string = data.image.link;
+        // const user_id : string = data.id;
+        // const user_name : string = data.displayname;
+        // const user_avatar : string = data.image.versions.medium;
         const upsertUser = await this.prisma.user.upsert({
             where: {
-              this.prisma.user.avatar_id: '#id',
+              intra_id: data.id
             },
             update: {
-              email: 'newmail@prisma.io',
+
             },
             create: {
-              email: 'viola@prisma.io',
-              avatar_id: 'Viola the Magnificent',
+              name: data.displayname,
+              intra_id: data.id,
+              avatar: data.image.versions.medium,
             },
           })
+          const jwt = {
+            id: upsertUser.id,
+            tfa_required: !!upsertUser.tfa
+          }
         return data;
     }
 }

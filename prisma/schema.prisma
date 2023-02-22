@@ -11,70 +11,69 @@ datasource db {
 }
 
 model User {
-  id      String    @id @default(uuid())
-  name    String
+  id       String  @id @default(uuid())
+  name     String
   // email String @unique
-  // password  String
-  avatar  String
-  Fa_2    Boolean @default(false)
-  Intraid Int
-  xp      String
-  wins    Int
-  loses   Int
+  avatar   String
+  tfa      String?
+  intra_id Int     @unique
+  xp       Int @default(0)
+  wins     Int @default(0)
+  loses    Int @default(0)
 
-  Friends    Friends[]    @relation("from")
-  Friendsto  Friends?     @relation("to")
-  Gammes     Gammes[]     @relation("playerone")
-  Gammesq    Gammes?      @relation("playertwo")
-  Romms      Romms[]
-  Romms_user Romms_user[]
-  Messages   Messages[]
+  Friends   Friend[]   @relation("from")
+  Friendsto Friend[]    @relation("to")
+  Game1      Game[]     @relation("playerone")
+  Game2     Game[]      @relation("playertwo")
+  Room      Room[]
+  RoomUser  RoomUser[]
+  Message   Message[]
 }
 
-model Friends {
-  user1    User?   @relation("from", fields: [From_id], references: [id])
-  user2    User?   @relation("to", fields: [To_id], references: [id])
-  From_id  String     @unique
-  To_id    String     @unique
-  Accepted Boolean @default(false)
+model Friend {
+  user1    User?   @relation("from", fields: [from_id], references: [id])
+  user2    User?   @relation("to", fields: [to_id], references: [id])
+  from_id  String  @unique
+  to_id    String  @unique
+  accepted Boolean @default(false)
 }
 
-model Gammes {
-  id             Int    @unique
-  background     String
-  user1          User?  @relation("playerone", fields: [playerone_id], references: [id])
-  user2          User?  @relation("playertwo", fields: [playertwo_id], references: [id])
-  playerone_id   String    @unique
-  playertwo_id   String    @unique
-  playeronescore Int
-  plyaertwoscore Int
+model Game {
+  id            Int    @unique
+  background    String
+  player1       User?  @relation("playerone", fields: [player1_id], references: [id])
+  player2       User?  @relation("playertwo", fields: [player2_id], references: [id])
+  player1_id    String @unique
+  player2_id    String @unique
+  player1_score Int
+  plyaer2_score Int
 }
 
-model Romms {
-  id            Int         @id @unique @default(autoincrement())
-  password      String
-  type          String      @default("public")
-  user          User        @relation(fields: [id_user_owner], references: [id])
+model Room {
+  id            Int       @id @unique @default(autoincrement())
+  password      String?
+  type          String    @default("public")
+  user          User      @relation(fields: [id_user_owner], references: [id])
   id_user_owner String
-  Romms_user    Romms_user?
-  Messages      Messages[]
+  RoomUser      RoomUser?
+  Message       Message[]
 }
 
-model Romms_user {
+model RoomUser {
   user    User     @relation(fields: [user_id], references: [id])
-  user_id String      @unique
-  rooms   Romms    @relation(fields: [room_id], references: [id])
+  user_id String   @unique
+  room    Room     @relation(fields: [room_id], references: [id])
   room_id Int      @unique
   admin   Boolean
   ban     Boolean
   mute    DateTime
 }
 
-model Messages {
+model Message {
   id         Int      @id @unique @default(autoincrement())
   content    String
   created_at DateTime
-  rooms      Romms    @relation(fields: [room_id], references: [id])
+  room       Room     @relation(fields: [room_id], references: [id])
   room_id    Int
   user       User     @relation(fields: [from_id], references: [id])
   from_id    String

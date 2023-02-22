@@ -1,18 +1,21 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Query, Redirect, Req, Res } from '@nestjs/common';
+import { Request, Response  } from 'express';
 import { AuthService } from './auth.service';
-import { AuthDto } from './dto';
+import axios from 'axios';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+    constructor(private authService: AuthService) {}
 
-  @Post('signup')
-  signup(@Body() b: AuthDto) {
-    return this.authService.signup(b);
-  }
+    @Get('/redirect')
+    @Redirect('https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-8dac923a7faa5e271e7a48b1823cd099d6b981eb5193dca17613e24b4cd72ca5&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fauth&response_type=code', 301)
+    redirect(){}
 
-  @Post('signin')
-  signin() {
-    return this.authService.signin();
-  }
+    
+    @Get('')
+    async storeUser (@Query() obj) {
+       return this.authService.fetch_data(obj.code);
+    }
+
+
 }
