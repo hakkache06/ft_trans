@@ -16,8 +16,8 @@ model User {
   // email String @unique
   // password  String
   avatar String
-  Fa_2   Boolean
-  ntraid Int
+  Fa_2   Boolean @default(false)
+  Intraid Int
   xp     String
   wins   Int
   loses  Int
@@ -39,7 +39,7 @@ model Friends {
 model Gammes {
   id             Int    @unique
   background     String
-  user           User   @relation(fields: [playerone_id], references: [id])
+  user           User   @relation(fields: [playerone_id,playert], references: [id])
   playerone_id   Int
   playertwo_id   Int
   playeronescore Int
