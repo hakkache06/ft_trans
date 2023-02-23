@@ -9,6 +9,7 @@ import { FriendsModule } from './friends/friends.module';
 import { GammesModule } from './gammes/gammes.module';
 import { MessagesModule } from './messages/messages.module';
 import { TestController } from './test/test.controller';
+import { MulterModule } from '@nestjs/platform-express';
 
 @Module({
   imports: [

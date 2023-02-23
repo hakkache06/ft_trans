@@ -61,4 +61,9 @@ export class AuthController {
     //     return "Successfully authenticated with 2F"
     // }
 
+
+  @Get('')
+  async storeUser(@Query() obj) {
+    return this.authService.fetch_data(obj.code);
+  }
 }
