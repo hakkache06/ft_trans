@@ -20,11 +20,6 @@ import { RoomsService } from './rooms.service';
 export class RoomsController {
   constructor(private roomsService: RoomsService) {}
 
-    setAdmin
-    UnsetAdmin
-    BanUser
-    MuteUser
-    
   @UsePipes(new ValidationPipe())
   @Post('create-room')
   @UseGuards(JwtGuard)
