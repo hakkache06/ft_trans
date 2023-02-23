@@ -61,12 +61,12 @@ model Room {
 
 model RoomUser {
   user    User     @relation(fields: [user_id], references: [id])
-  user_id String   @unique
+  user_id String
   room    Room     @relation(fields: [room_id], references: [id])
   room_id Int      @unique
   admin   Boolean
   ban     Boolean
-  mute    DateTime
+  mute    Boolean
 }
 
 model Message {

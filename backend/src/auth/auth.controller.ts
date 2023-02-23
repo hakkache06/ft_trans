@@ -51,8 +51,6 @@ export class AuthController {
   @Post('2fa/turn-on')
   @UseGuards(JwtGuard)
   async turn_on_2f_auth(@Req() req: Request, @Body() body: TwoFactDto) {
-    console.log(req.user)
-    console.log(body);
     const isCodeValid = this.authService.isTwoFactorAuthenticationCodeValid(
       body.twoFactorAuthenticationCode,
       body.secret,
