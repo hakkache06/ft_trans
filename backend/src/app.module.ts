@@ -10,6 +10,7 @@ import { GammesModule } from './gammes/gammes.module';
 import { MessagesModule } from './messages/messages.module';
 import { TestController } from './test/test.controller';
 import { MulterModule } from '@nestjs/platform-express';
+import { RoomsGateway } from './rooms/rooms.gateway';
 
 @Module({
   imports: [
@@ -26,5 +27,6 @@ import { MulterModule } from '@nestjs/platform-express';
     MessagesModule,
   ],
   controllers: [TestController],
+  providers: [RoomsGateway],
 })
 export class AppModule {}

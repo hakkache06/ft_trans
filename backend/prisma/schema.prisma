@@ -31,8 +31,8 @@ model User {
 }
 
 model Friend {
-  user1    User?   @relation("from", fields: [from_id], references: [id])
-  user2    User?   @relation("to", fields: [to_id], references: [id])
+  user1    User?   @relation("from", fields: [from_id], references: [id], onDelete: Cascade)
+  user2    User?   @relation("to", fields: [to_id], references: [id], onDelete: Cascade)
   from_id  String  @unique
   to_id    String  @unique
   accepted Boolean @default(false)
@@ -41,41 +41,49 @@ model Friend {
 model Game {
   id            Int    @unique
   background    String
-  player1       User?  @relation("playerone", fields: [player1_id], references: [id])
-  player2       User?  @relation("playertwo", fields: [player2_id], references: [id])
+  player1       User?  @relation("playerone", fields: [player1_id], references: [id], onDelete: Cascade)
+  player2       User?  @relation("playertwo", fields: [player2_id], references: [id], onDelete: Cascade)
   player1_id    String @unique
   player2_id    String @unique
   player1_score Int
   plyaer2_score Int
 }
 
+enum RoomType {
+  public
+  private
+  protected
+}
+
 model Room {
   id            Int       @id @unique @default(autoincrement())
   password      String?
   type          String    @default("public")
-  user          User      @relation(fields: [id_user_owner], references: [id])
+  user          User      @relation(fields: [id_user_owner], references: [id], onDelete: Cascade)
   id_user_owner String
-  RoomUser      RoomUser?
+  RoomUser      RoomUser[]
   Message       Message[]
 }
 
 model RoomUser {
-  user    User     @relation(fields: [user_id], references: [id])
-  user_id String   @unique
-  room    Room     @relation(fields: [room_id], references: [id])
-  room_id Int      @unique
+  user    User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id String
+  room    Room     @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  room_id Int 
   admin   Boolean
   ban     Boolean
-  mute    DateTime
+  mute    DateTime?
+
+  @@id([user_id, room_id])
 }
 
 model Message {
   id         Int      @id @unique @default(autoincrement())
   content    String
   created_at DateTime
-  room       Room     @relation(fields: [room_id], references: [id])
+  room       Room     @relation(fields: [room_id], references: [id], onDelete: Cascade)
   room_id    Int
-  user       User     @relation(fields: [from_id], references: [id])
+  user       User     @relation(fields: [from_id], references: [id], onDelete: Cascade)
   from_id    String
 }
 
