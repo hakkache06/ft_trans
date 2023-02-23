@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UsePipes, ValidationPipe } from '@nestjs/common';
 import axios from 'axios';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
@@ -34,7 +34,8 @@ export class AuthService {
           avatar: data.image.versions.medium
         };
     }
-        
+      
+    @UsePipes(new ValidationPipe())
     async create_user(userDto : UserDto) {
       const upsertUser = await this.prisma.user.upsert({
           where: {
@@ -98,19 +99,21 @@ export class AuthService {
 
     async authenticate2f(user: any)
     {
-      const payload = {
-        id: user.id,
-        tfa_enabled: user.tfa_enabled,
-        tfa_authenticated: true
-      }
       const updateUser = await this.prisma.user.update({
         where: {
           id: user.id,
         },
         data: {
-          // tfa_authenticated: true,
+          tfa_authenticated: true,
         },
       })
+
+      const payload = {
+        id: user.id,
+        tfa_enabled: user.tfa_enabled,
+        tfa_authenticated: user.tfa_authenticated
+      }
+
       const secret = await this.config.get('JWT_SECRET')
       const token = await this.jwt.signAsync(payload, {
         expiresIn: '15m',
@@ -127,7 +130,7 @@ export class AuthService {
           id: user.id,
         },
         data: {
-          // tfa_enabled: true,
+          tfa_enabled: true,
         }
       })
     }
@@ -138,7 +141,7 @@ export class AuthService {
           id: user.id,
         },
         data: {
-          // tfa_enabled: false,
+          tfa_enabled: false,
           tfa: null,
         }
       })

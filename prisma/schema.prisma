@@ -16,6 +16,8 @@ model User {
   // email String @unique
   avatar   String
   tfa      String?
+  tfa_enabled Boolean @default(false)
+  tfa_authenticated Boolean @default(false)
   intra_id Int     @unique
   xp       Int @default(0)
   wins     Int @default(0)

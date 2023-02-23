@@ -1,7 +1,7 @@
-import { ExtractJwt, Strategy } from 'passport-jwt';
-import { PassportStrategy } from '@nestjs/passport';
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'nestjs-prisma';
+import { Injectable } from "@nestjs/common";
+import { PassportStrategy } from "@nestjs/passport";
+import { PrismaService } from "../../prisma/prisma.service";
+import { ExtractJwt, Strategy } from "passport-jwt";
 
 @Injectable()
 export class Jwt2faStrategy extends PassportStrategy(Strategy, 'jwt-2fa') {
@@ -18,11 +18,12 @@ export class Jwt2faStrategy extends PassportStrategy(Strategy, 'jwt-2fa') {
             id: payload.id,
         }
     })
-    // if (!user.tfa_enabled) {
-    //   return user;
-    // }
-    // if (payload.tfa_authenticated) {
-    //   return user;
-    // }
+    console.log(user.tfa_authenticated, user.tfa_enabled)
+    if (!user.tfa_enabled) {
+      return user;
+    }
+    if (user.tfa_authenticated) {
+      return user;
+    }
   }
 }

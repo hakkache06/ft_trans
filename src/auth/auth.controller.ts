@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Param, ParseIntPipe, Post, Query, Redirect, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, ParseIntPipe, Post, Query, Redirect, Req, Res, UnauthorizedException, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { Request, Response  } from 'express';
 import { AuthService } from './auth.service';
 import { authenticator } from 'otplib';
@@ -28,9 +28,11 @@ export class AuthController {
         return this.authService.generateQrCodeDataURL(tf_auth_obj.otpauthUrl)
     }
 
+    @UsePipes(new ValidationPipe())
     @Post('2fa/turn-on')
     @UseGuards(JwtGuard)
     async turn_on_2f_auth(@Req() req: Request, @Body() body: TwoFactDto) {
+        console.log(body)
         const isCodeValid = this.authService.isTwoFactorAuthenticationCodeValid(body.twoFactorAuthenticationCode, req.user)
         if (!isCodeValid) {
             throw new UnauthorizedException('Wrong authentication code');
@@ -38,32 +40,36 @@ export class AuthController {
         return this.authService.turnOnTwoFactorAuthentication(req.user)
     }
 
-    // @Post('2fa/turn-off')
-    // @UseGuards(JwtGuard)
-    // async turn_off_2f_auth(@Req() req: Request, @Body() body: TwoFactDto) {
-    //     return this.authService.turnOffTwoFactorAuthentication(req.user)
-    // }
+    @Post('2fa/turn-off')
+    @UseGuards(JwtGuard)
+    async turn_off_2f_auth(@Req() req: Request, @Body() body: TwoFactDto) {
+        return this.authService.turnOffTwoFactorAuthentication(req.user)
+    }
     
-    // @Post('2fa/authenticate')
-    // @HttpCode(200)
-    // @UseGuards(JwtGuard)
-    // async authenticate(@Req() req, @Body() body) {
-    //     const isCodeValid = this.authService.isTwoFactorAuthenticationCodeValid(body.twoFactorAuthenticationCode,req.user);
-    //     if (!isCodeValid) {
-    //         throw new UnauthorizedException('Wrong authentication code');
-    //     }
-    //     return this.authService.authenticate2f(req.user);
-    // }
+    @Post('2fa/authenticate')
+    @HttpCode(200)
+    @UseGuards(JwtGuard)
+    async authenticate(@Req() req, @Body() body) {
+        const isCodeValid = this.authService.isTwoFactorAuthenticationCodeValid(body.twoFactorAuthenticationCode,req.user);
+        if (!isCodeValid) {
+            throw new UnauthorizedException('Wrong authentication code');
+        }
+        return this.authService.authenticate2f(req.user);
+    }
 
-    // @Get('2frequired')
-    // @UseGuards(Jwt2faGuard)
-    // async test() {
-    //     return "Successfully authenticated with 2F"
-    // }
+    @Get('2frequired')
+    @UseGuards(Jwt2faGuard)
+    async test() {
+        return "Successfully authenticated with 2F"
+    }
 
-
-  @Get('')
-  async storeUser(@Query() obj) {
-    return this.authService.fetch_data(obj.code);
-  }
+    @Get('2fnotrequired')
+    @UseGuards(JwtGuard)
+    async test2() {
+        return "Successfully authenticated without 2F"
+    }
+//   @Get('')
+//   async storeUser(@Query() obj) {
+//     return this.authService.fetch_data(obj.code);
+//   }
 }
