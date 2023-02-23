@@ -25,7 +25,7 @@ export class RoomsService {
         room_id: new_room.id,
         admin: true,
         ban: false,
-        mute: false,
+        mute: null,
       },
     });
   }
