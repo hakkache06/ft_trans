@@ -1,6 +1,12 @@
-import { IsNotEmpty, Min } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsIn } from 'class-validator';
 
 export class UpdateRoomDto {
   @IsNotEmpty()
+  @IsOptional()
+  @IsIn(["public", "private", "protected"])
+  type: string;
+
+  @IsNotEmpty()
+  @IsOptional()
   password: string;
 }

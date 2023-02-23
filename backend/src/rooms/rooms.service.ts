@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { RoomDto, UpdateRoomDto } from './dto';
+import { RoomDto, RoomUserDto, UpdateRoomDto } from './dto';
 import { PrismaService } from '../prisma/prisma.service';
 import * as argon from 'argon2';
 
@@ -8,15 +8,12 @@ export class RoomsService {
   constructor(private prisma: PrismaService) {}
 
   async createRoom(body: RoomDto, req: any) {
-    let hash = null;
-    if (body.password) {
-      hash = await argon.hash(body.password);
-    }
     const new_room = await this.prisma.room.create({
       data: {
-        type: body.type,
         id_user_owner: req.user.id,
-        password: hash,
+        type: body.type,
+        password:
+          body.type === 'protected' ? await argon.hash(body.password) : null,
       },
     });
     const roomUser = await this.prisma.roomUser.create({
@@ -50,30 +47,18 @@ export class RoomsService {
     }
   }
 
-  async updatePwd(idRoom: number, req: any, new_password: string) {
-    try {
-      const room = await this.prisma.room.findUnique({
-        where: {
-          id: idRoom,
-        },
-      });
-      if (!room) throw 'Room not found';
-      if (room.type === 'protected' && room.id_user_owner === req.user.id) {
-        const hash = await argon.hash(new_password);
-        const updateRoom = await this.prisma.room.update({
-          where: {
-            id: idRoom,
-          },
-          data: {
-            password: hash,
-          },
-        });
-      } else {
-        throw 'Room not protected by password or user is not the owner';
-      }
-    } catch (e) {
-      return e;
-    }
+  async update(idRoom: number, req: any, body: UpdateRoomDto) {
+    await this.prisma.room.updateMany({
+      where: {
+        id: idRoom,
+        id_user_owner: req.user.id,
+      },
+      data: {
+        type: body.type,
+        password:
+          body.type === 'protected' ? await argon.hash(body.password) : null,
+      },
+    });
   }
 
   async deleteRoom(idRoom: number, req: any) {
@@ -85,11 +70,6 @@ export class RoomsService {
       });
       if (!room) throw 'Room not found';
       if (req.user.id === room.id_user_owner) {
-        const roomUserdeleted = await this.prisma.roomUser.delete({
-          where: {
-            room_id: idRoom,
-          },
-        });
         const roomDeleted = await this.prisma.room.delete({
           where: {
             id: idRoom,
@@ -101,29 +81,53 @@ export class RoomsService {
     }
   }
 
-  async removePwd(idRoom: number) {
-     try {
-       const room = await this.prisma.room.findUnique({
-         where: {
-           id: idRoom,
-         },
-       });
-       if (!room) throw 'Room not found';
-       if (room.type === 'protected')
-       {
-         const updateRoom = await this.prisma.room.update({
-           where: {
-             id: idRoom,
-           },
-           data: {
-             type: 'private',
-             password: null
-           },
-         });
-       }
-       else throw "Room is not protected by a password"
-     } catch (e) {
-       return e;
-     }
+  async joinRoom(idRoom: number, req: any) {
+    const roomUser = this.prisma.roomUser.create({
+      data: {
+        user_id: req.user.id,
+        room_id: idRoom,
+        admin: false,
+        ban: false,
+        mute: null,
+      },
+    });
+  }
+
+  async kickUser(idRoom: number, idUser: string, req: any) {
+    const roomUser = await this.prisma.roomUser.findFirst({
+      where: {
+        room_id: idRoom,
+        user_id: req.user.id,
+        admin: true,
+      },
+    });
+    if (!roomUser) throw new HttpException('Unauthorized', 401);
+    if (roomUser) {
+      const roomUser = await this.prisma.roomUser.deleteMany({
+        where: {
+          user_id: idUser,
+          room_id: idRoom,
+        },
+      });
+    }
+  }
+
+  async updateUser(
+    idRoom: number,
+    idUser: string,
+    body: RoomUserDto,
+    req: any,
+  ) {
+    const roomUser = this.prisma.roomUser.updateMany({
+      where: {
+        user_id: idUser,
+        room_id: idRoom,
+      },
+      data: {
+        admin: body.admin,
+        ban: body.ban,
+        mute: body.mute,
+      },
+    });
   }
 }
