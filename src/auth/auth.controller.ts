@@ -60,4 +60,5 @@ export class AuthController {
     // async test() {
     //     return "Successfully authenticated with 2F"
     // }
+
 }

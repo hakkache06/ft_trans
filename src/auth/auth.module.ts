@@ -10,9 +10,8 @@ import { JwtStrategy } from './strategy';
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy]
 })
-export class AuthModule implements NestModule{
+export class AuthModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-     consumer.apply()
-  }  
-
+    consumer.apply();
+  }
 }
