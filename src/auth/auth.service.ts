@@ -1,12 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
 import { PrismaService } from '../prisma/prisma.service';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { authenticator } from 'otplib';
+import { toDataURL } from 'qrcode';
+import { UserDto } from './dto';
 
 @Injectable()
 export class AuthService {
-    constructor (private prisma: PrismaService) {}
-
-
+    constructor (private prisma: PrismaService, private jwt: JwtService, private config: ConfigService) {}
 
     async fetch_data(code : string) {
         const client_id = "u-s4t2ud-8dac923a7faa5e271e7a48b1823cd099d6b981eb5193dca17613e24b4cd72ca5";
@@ -19,32 +22,129 @@ export class AuthService {
             code,
             redirect_uri
         })
+
         const data = (await axios.get('https://api.intra.42.fr/v2/me', {
             headers: {
                 'Authorization': `Bearer ${token.data.access_token}`
             }
         })).data
-
-        // const user_id : string = data.id;
-        // const user_name : string = data.displayname;
-        // const user_avatar : string = data.image.versions.medium;
-        const upsertUser = await this.prisma.user.upsert({
-            where: {
-              intra_id: data.id
-            },
-            update: {
-
-            },
-            create: {
-              name: data.displayname,
-              intra_id: data.id,
-              avatar: data.image.versions.medium,
-            },
-          })
-          const jwt = {
-            id: upsertUser.id,
-            tfa_required: !!upsertUser.tfa
-          }
-        return data;
+        return {
+          id: data.id,
+          name: data.displayname,
+          avatar: data.image.versions.medium
+        };
     }
+        
+    async create_user(userDto : UserDto) {
+      const upsertUser = await this.prisma.user.upsert({
+          where: {
+            intra_id: userDto.id
+          },
+          update: {},
+          create: {
+            intra_id: userDto.id,
+            name: userDto.name,
+            avatar: userDto.avatar,
+          },
+        })
+        return upsertUser;
+    }
+
+    async signToken(idUser: string) : Promise<{access_token: string}> {
+        const payload = {
+          id: idUser,
+        }
+
+        const secret = await this.config.get('JWT_SECRET')
+        const token = await this.jwt.signAsync(payload, {
+          expiresIn: '15m',
+          secret,
+        })
+        return {
+            access_token: token,
+        };
+    }
+
+    async generate_2f_auth(user: any)
+    {
+      const secret = authenticator.generateSecret();
+      const otpauthUrl = authenticator.keyuri(user.name, 'Transcendence 2F Auth', secret);
+
+      const updateUser = await this.prisma.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          tfa: secret
+        },
+      })
+      return {
+        secret,
+        otpauthUrl
+      }
+    }
+
+    async generateQrCodeDataURL(otpAuthUrl: string) {
+      return toDataURL(otpAuthUrl);
+    }
+
+    
+    isTwoFactorAuthenticationCodeValid(twoFactorAuthenticationCode: string, user: any) {
+      return authenticator.verify({
+        token: twoFactorAuthenticationCode,
+        secret: user.tfa,
+      });
+    }
+
+    async authenticate2f(user: any)
+    {
+      const payload = {
+        id: user.id,
+        tfa_enabled: user.tfa_enabled,
+        tfa_authenticated: true
+      }
+      const updateUser = await this.prisma.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          // tfa_authenticated: true,
+        },
+      })
+      const secret = await this.config.get('JWT_SECRET')
+      const token = await this.jwt.signAsync(payload, {
+        expiresIn: '15m',
+        secret,
+      })
+      return {
+          access_token: token,
+      };
+    }
+
+    async turnOnTwoFactorAuthentication(user: any) {
+      const userUpdated = await this.prisma.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          // tfa_enabled: true,
+        }
+      })
+    }
+
+    async turnOffTwoFactorAuthentication(user: any) {
+      const userUpdated = await this.prisma.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          // tfa_enabled: false,
+          tfa: null,
+        }
+      })
+    }
+
+
 }
+
+
