@@ -1,4 +1,4 @@
-import { Injectable, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Injectable, UnauthorizedException, UsePipes, ValidationPipe } from '@nestjs/common';
 import axios from 'axios';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
@@ -51,10 +51,11 @@ export class AuthService {
         return upsertUser;
     }
 
-    async signToken(idUser: string) : Promise<{access_token: string}> {
+    async signToken(idUser: string, tfa_required = false) : Promise<{access_token: string}> {
         const payload = {
           id: idUser,
-        }
+          tfa_required,
+        };
 
         const secret = await this.config.get('JWT_SECRET')
         const token = await this.jwt.signAsync(payload, {
@@ -71,14 +72,6 @@ export class AuthService {
       const secret = authenticator.generateSecret();
       const otpauthUrl = authenticator.keyuri(user.name, 'Transcendence 2F Auth', secret);
 
-      const updateUser = await this.prisma.user.update({
-        where: {
-          id: user.id,
-        },
-        data: {
-          tfa: secret
-        },
-      })
       return {
         secret,
         otpauthUrl
@@ -90,47 +83,32 @@ export class AuthService {
     }
 
     
-    isTwoFactorAuthenticationCodeValid(twoFactorAuthenticationCode: string, user: any) {
+    isTwoFactorAuthenticationCodeValid(twoFactorAuthenticationCode: string, secret: any) {
       return authenticator.verify({
         token: twoFactorAuthenticationCode,
-        secret: user.tfa,
+        secret,
       });
     }
 
-    async authenticate2f(user: any)
+    async authenticate2f(user: any, body : any)
     {
-      const updateUser = await this.prisma.user.update({
-        where: {
-          id: user.id,
-        },
-        data: {
-          tfa_authenticated: true,
-        },
-      })
-
-      const payload = {
-        id: user.id,
-        tfa_enabled: user.tfa_enabled,
-        tfa_authenticated: user.tfa_authenticated
-      }
-
-      const secret = await this.config.get('JWT_SECRET')
-      const token = await this.jwt.signAsync(payload, {
-        expiresIn: '15m',
-        secret,
-      })
-      return {
-          access_token: token,
-      };
+    const isCodeValid = this.isTwoFactorAuthenticationCodeValid(
+      body.twoFactorAuthenticationCode,
+      user.secret,
+    );
+    if (!isCodeValid) {
+      throw new UnauthorizedException('Wrong authentication code');
+    }
+      return this.signToken(user.id, true)
     }
 
-    async turnOnTwoFactorAuthentication(user: any) {
+    async turnOnTwoFactorAuthentication(user: any, secret: string) {
       const userUpdated = await this.prisma.user.update({
         where: {
           id: user.id,
         },
         data: {
-          tfa_enabled: true,
+          tfa: secret,
         }
       })
     }
@@ -141,7 +119,6 @@ export class AuthService {
           id: user.id,
         },
         data: {
-          tfa_enabled: false,
           tfa: null,
         }
       })
