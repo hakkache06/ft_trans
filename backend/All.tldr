@@ -58854,12 +58854,12 @@
             "parentId": "438cbd16-e96a-4b78-1dc5-e97454ac7412",
             "childIndex": 48,
             "point": [
-              111.12,
-              2897.09
+              571.43,
+              4133.6
             ],
             "size": [
-              2303.48,
-              3071.32
+              1468.22,
+              1957.65
             ],
             "rotation": 0,
             "style": {
@@ -59116,8 +59116,8 @@
             "parentId": "438cbd16-e96a-4b78-1dc5-e97454ac7412",
             "childIndex": 58,
             "point": [
-              446.52,
-              3484.21
+              490.56,
+              3188.09
             ],
             "size": [
               682.78,
@@ -59144,8 +59144,8 @@
             "parentId": "438cbd16-e96a-4b78-1dc5-e97454ac7412",
             "childIndex": 59,
             "point": [
-              660.16,
-              3503.25
+              704.2,
+              3207.13
             ],
             "rotation": 0,
             "text": "        Argon.  vs b crypte",
@@ -59166,8 +59166,8 @@
             "parentId": "438cbd16-e96a-4b78-1dc5-e97454ac7412",
             "childIndex": 60,
             "point": [
-              479.94,
-              3580.07
+              523.98,
+              3283.95
             ],
             "rotation": 0,
             "text": "Bcrypt its verification algorithm is only limited to he first 72 bytes",

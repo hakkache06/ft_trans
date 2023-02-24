@@ -7,27 +7,35 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Put,
   Req,
   UseGuards,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
 import { JwtGuard } from 'src/auth/guards';
-import { RoomDto, UpdateRoomDto } from './dto';
+import { RoomDto, RoomUserDto, UpdateRoomDto } from './dto';
 import { RoomsService } from './rooms.service';
 
 @Controller('rooms')
 export class RoomsController {
   constructor(private roomsService: RoomsService) {}
 
+  //   AddUser;
+  //   KickUser;
+  //   setAdmin;
+  //   UnsetAdmin;
+  //   BanUser;
+  //   MuteUser;
+
   @UsePipes(new ValidationPipe())
-  @Post('create-room')
+  @Post()
   @UseGuards(JwtGuard)
   async createRoom(@Body() body: RoomDto, @Req() req: Request) {
     return this.roomsService.createRoom(body, req);
   }
 
-  @Get('all-rooms')
+  @Get()
   @UseGuards(JwtGuard)
   async fetchAllRoom() {
     return this.roomsService.fetchAllRoom();
@@ -40,28 +48,53 @@ export class RoomsController {
   }
 
   @UsePipes(new ValidationPipe())
-  @Post('update-password/:id')
+  @Put(':id')
   @UseGuards(JwtGuard)
-  async updatePwd(
+  async update(
     @Param('id', ParseIntPipe) idRoom: number,
     @Req() req: Request,
     @Body() body: UpdateRoomDto,
   ) {
-    return this.roomsService.updatePwd(idRoom, req, body.password);
+    return this.roomsService.update(idRoom, req, body);
   }
 
-  @Delete('delete-room/:id')
+  @Delete(':id')
   @UseGuards(JwtGuard)
   async deleteRoom(
     @Param('id', ParseIntPipe) idRoom: number,
-    @Req() req : Request,
+    @Req() req: Request,
   ) {
     return this.roomsService.deleteRoom(idRoom, req);
   }
 
-    @Patch('remove-password/:id')
+  @Post(':id/users')
+  @UseGuards(JwtGuard)
+  async joinRoom(
+    @Param('id', ParseIntPipe) idRoom: number,
+    @Req() req: Request,
+  ) {
+    return this.roomsService.joinRoom(idRoom, req);
+  }
+
+  @Delete(':id/users/:user_id')
+  @UseGuards(JwtGuard)
+  async kickUser(
+    @Param('id', ParseIntPipe) idRoom: number,
+    @Param('user_id') idUser: string,
+    @Req() req: Request,
+  ) {
+    return this.roomsService.kickUser(idRoom, idUser, req);
+  }
+
+    @UsePipes(new ValidationPipe())
+    @Put(':id/users/:user_id')
     @UseGuards(JwtGuard)
-    async removePwd(@Param('id', ParseIntPipe) idRoom: number) {
-      return this.roomsService.removePwd(idRoom);
+    async updateUser(
+      @Param('id', ParseIntPipe) idRoom: number,
+      @Param('user_id') idUser: string,
+      @Body() body: RoomUserDto,
+      @Req() req: Request,
+    ) {
+      return this.roomsService.updateUser(idRoom, idUser, body, req);
     }
 }
