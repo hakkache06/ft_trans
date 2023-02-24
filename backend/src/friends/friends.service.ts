@@ -24,19 +24,24 @@ export class FriendsService {
       const checkuser = await this.prisma.User.findMany({
         where: { id: idUser },
       });
+      // Id Wach kayen
       if (checkuser) res.send({ message: 'exist' });
       else {
+        //Id Wach kayen fe Table friends
         const checkuser = await this.prisma.friend.findMany({
           where: { to_id: idUser },
         });
         if (!checkuser) {
+          // ila makyench
           const checkuser = await this.prisma.friend.create({
             data: {
-              to_id: 'x',
-              from_id: 'z',
+              to_id: b.id,
+              from_id: 'my id',
               accepted: true,
             },
           });
+        } else {
+          res.send({ message: 'exist' });
         }
       }
     } catch (error) {
