@@ -21,13 +21,6 @@ import { RoomsService } from './rooms.service';
 export class RoomsController {
   constructor(private roomsService: RoomsService) {}
 
-  //   AddUser;
-  //   KickUser;
-  //   setAdmin;
-  //   UnsetAdmin;
-  //   BanUser;
-  //   MuteUser;
-
   @UsePipes(new ValidationPipe())
   @Post()
   @UseGuards(JwtGuard)
