@@ -17,8 +17,8 @@ export class FriendsController {
 
   // Get All friend from table
   @Get('')
-  fetchAllFriends(@Body() b, @Res() res: Response) {
-    return this.friendsService.fetchAllfriends(b, res);
+  fetchAllFriends(@Body() b) {
+    return this.friendsService.fetchAllfriends(b);
   }
   //// id kayen
   // block
@@ -26,16 +26,16 @@ export class FriendsController {
   // id == from_id
   @Post(':id')
   @UseGuards(JwtGuard)
-  addFriends(
+  async addFriends(
     @Param('id') idUser: string,
     @Body() b,
-    @Res() res: Response,
-    @Req() req,
+    @Req() req: Request,
   ) {
-    return this.friendsService.addFrineds(idUser, b, res, req);
+    return this.friendsService.addFrineds(idUser, b, req);
   }
-  @Post('')
-  removeFriends(@Param('id') idUser: string, @Body() b, @Res() res: Response) {
-    return this.friendsService.removeFriends(idUser, b, res);
+  @Post('/delete/:id')
+  @UseGuards(JwtGuard)
+  removeFriends(@Param('id') idUser: string, @Req() req: Request) {
+    return this.friendsService.removeFriends(idUser, req);
   }
 }

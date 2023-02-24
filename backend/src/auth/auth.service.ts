@@ -25,7 +25,6 @@ export class AuthService {
     const client_id = process.env.CLIENT_ID;
     const client_secret = process.env.CLIENT_SECRET;
     const redirect_uri = process.env.REDIRECT_URL;
-
     try {
       const token = await axios.post('https://api.intra.42.fr/oauth/token', {
         grant_type: 'authorization_code',
@@ -34,7 +33,6 @@ export class AuthService {
         code,
         redirect_uri,
       });
-
       const data = (
         await axios.get('https://api.intra.42.fr/v2/me', {
           headers: {
@@ -49,7 +47,7 @@ export class AuthService {
         avatar: data.image.versions.medium,
       };
     } catch {
-      throw new BadRequestException('Wrong authentication code');
+      throw new BadRequestException('Bad request');
     }
   }
 
@@ -80,14 +78,14 @@ export class AuthService {
 
     const secret = await this.config.get('JWT_SECRET');
     const token = await this.jwt.signAsync(payload, {
-      expiresIn: '15m',
+      expiresIn: '72h',
       secret,
     });
+
     return {
       access_token: token,
     };
   }
-
   async generate_2f_auth(user: any) {
     const secret = authenticator.generateSecret();
     const otpauthUrl = authenticator.keyuri(

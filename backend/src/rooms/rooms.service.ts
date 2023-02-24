@@ -2,13 +2,18 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { RoomDto, RoomUserDto, UpdateRoomDto } from './dto';
 import { PrismaService } from '../prisma/prisma.service';
 import * as argon from 'argon2';
+import { RoomsGateway } from './rooms.gateway';
+import { type } from 'os';
 
 @Injectable()
 export class RoomsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private roomsGateway: RoomsGateway,
+  ) {}
 
   async createRoom(body: RoomDto, req: any) {
-    const new_room = await this.prisma.room.create({
+    const newRoom = await this.prisma.room.create({
       data: {
         id_user_owner: req.user.id,
         type: body.type,
@@ -18,19 +23,39 @@ export class RoomsService {
     });
     const roomUser = await this.prisma.roomUser.create({
       data: {
-        user_id: new_room.id_user_owner,
-        room_id: new_room.id,
+        user_id: newRoom.id_user_owner,
+        room_id: newRoom.id,
         admin: true,
         ban: false,
         mute: null,
       },
     });
+
+    this.roomsGateway.joinRoom(newRoom.id_user_owner, newRoom.id);
+
+    return {
+      newRoom,
+      roomUser,
+    };
   }
 
-  async fetchAllRoom() {
-    const rooms = await this.prisma.room.findMany({});
-    if (!rooms) throw 'Not room is found';
-    return rooms;
+  async getAllUserRooms(req: any) {
+    const getRooms = await this.prisma.room.findMany({
+      where: {
+        OR: [
+          {OR: [{type: 'protected'}, {type: 'public'}],},
+          {
+            RoomUser: {
+              some: {
+                user_id: req.user.id,
+              },
+            },
+            type: 'private'
+          },
+        ],
+      },
+    });
+    return getRooms;
   }
 
   async getOneRoom(idRoom: number) {
@@ -48,7 +73,7 @@ export class RoomsService {
   }
 
   async update(idRoom: number, req: any, body: UpdateRoomDto) {
-    await this.prisma.room.updateMany({
+    const updatedRooms = await this.prisma.room.updateMany({
       where: {
         id: idRoom,
         id_user_owner: req.user.id,
@@ -59,6 +84,7 @@ export class RoomsService {
           body.type === 'protected' ? await argon.hash(body.password) : null,
       },
     });
+    return updatedRooms;
   }
 
   async deleteRoom(idRoom: number, req: any) {
@@ -91,25 +117,26 @@ export class RoomsService {
         mute: null,
       },
     });
+    this.roomsGateway.joinRoom(req.user.id, idRoom);
+    return roomUser;
   }
 
   async kickUser(idRoom: number, idUser: string, req: any) {
-    const roomUser = await this.prisma.roomUser.findFirst({
+    const isAdmin = await this.prisma.roomUser.findFirst({
       where: {
         room_id: idRoom,
         user_id: req.user.id,
         admin: true,
       },
     });
-    if (!roomUser) throw new HttpException('Unauthorized', 401);
-    if (roomUser) {
-      const roomUser = await this.prisma.roomUser.deleteMany({
-        where: {
-          user_id: idUser,
-          room_id: idRoom,
-        },
-      });
-    }
+    if (!isAdmin) throw new HttpException('Unauthorized', 401);
+    const roomUser = await this.prisma.roomUser.deleteMany({
+      where: {
+        user_id: idUser,
+        room_id: idRoom,
+      },
+    });
+    this.roomsGateway.leaveRoom(idUser, idRoom);
   }
 
   async updateUser(
@@ -118,7 +145,15 @@ export class RoomsService {
     body: RoomUserDto,
     req: any,
   ) {
-    const roomUser = this.prisma.roomUser.updateMany({
+    const isAdmin = await this.prisma.roomUser.findFirst({
+      where: {
+        room_id: idRoom,
+        user_id: req.user.id,
+        admin: true,
+      },
+    });
+    if (!isAdmin) throw new HttpException('Unauthorized', 401);
+    const roomUser = await this.prisma.roomUser.updateMany({
       where: {
         user_id: idUser,
         room_id: idRoom,
@@ -129,5 +164,7 @@ export class RoomsService {
         mute: body.mute,
       },
     });
+    if (body.ban) this.roomsGateway.leaveRoom(idUser, idRoom);
+    return roomUser;
   }
 }

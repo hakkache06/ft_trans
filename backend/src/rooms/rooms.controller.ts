@@ -30,8 +30,8 @@ export class RoomsController {
 
   @Get()
   @UseGuards(JwtGuard)
-  async fetchAllRoom() {
-    return this.roomsService.fetchAllRoom();
+  async getAllUserRooms(@Req() req: Request) {
+    return this.roomsService.getAllUserRooms(req);
   }
 
   @Get(':id')
@@ -79,15 +79,15 @@ export class RoomsController {
     return this.roomsService.kickUser(idRoom, idUser, req);
   }
 
-    @UsePipes(new ValidationPipe())
-    @Put(':id/users/:user_id')
-    @UseGuards(JwtGuard)
-    async updateUser(
-      @Param('id', ParseIntPipe) idRoom: number,
-      @Param('user_id') idUser: string,
-      @Body() body: RoomUserDto,
-      @Req() req: Request,
-    ) {
-      return this.roomsService.updateUser(idRoom, idUser, body, req);
-    }
+  @UsePipes(new ValidationPipe())
+  @Put(':id/users/:user_id')
+  @UseGuards(JwtGuard)
+  async updateUser(
+    @Param('id', ParseIntPipe) idRoom: number,
+    @Param('user_id') idUser: string,
+    @Body() body: RoomUserDto,
+    @Req() req: Request,
+  ) {
+    return this.roomsService.updateUser(idRoom, idUser, body, req);
+  }
 }
