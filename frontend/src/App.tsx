@@ -1,12 +1,120 @@
-import { Link, Navigate, Outlet } from "react-router-dom";
-import { Navbar, Avatar, Dropdown } from "flowbite-react";
+import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
 import logo from "./assets/logo.png";
 import { api, useAuth } from "./utils";
 import { useEffect, useState } from "react";
+import {
+  AppShell,
+  Aside,
+  Avatar,
+  Box,
+  Center,
+  createStyles,
+  Group,
+  Navbar,
+  Stack,
+  Tooltip,
+  UnstyledButton,
+  useMantineTheme,
+  Text,
+  Divider,
+} from "@mantine/core";
+import {
+  IconChevronLeft,
+  IconChevronRight,
+  IconHeartHandshake,
+  IconHome2,
+  IconLogout,
+  IconMessages,
+  IconPingPong,
+  IconUserCircle,
+} from "@tabler/icons-react";
+
+const routes: any[] = [
+  { icon: IconHome2, label: "Home", to: "/" },
+  { icon: IconPingPong, label: "Games", to: "/games" },
+  { icon: IconMessages, label: "Chat", to: "/chat" },
+];
+
+const useStyles = createStyles((theme) => ({
+  link: {
+    width: 50,
+    height: 50,
+    borderRadius: theme.radius.md,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color:
+      theme.colorScheme === "dark"
+        ? theme.colors.dark[0]
+        : theme.colors.gray[7],
+
+    "&:hover": {
+      backgroundColor:
+        theme.colorScheme === "dark"
+          ? theme.colors.dark[5]
+          : theme.colors.gray[0],
+    },
+  },
+
+  active: {
+    "&, &:hover": {
+      backgroundColor: theme.fn.variant({
+        variant: "light",
+        color: theme.primaryColor,
+      }).background,
+      color: theme.fn.variant({ variant: "light", color: theme.primaryColor })
+        .color,
+    },
+  },
+}));
+
+interface NavbarLinkProps {
+  icon: any;
+  label: string;
+  active?: boolean;
+  onClick?(): void;
+  to?: string;
+}
+
+function NavbarLink({
+  icon: Icon,
+  label,
+  active,
+  onClick,
+  to,
+}: NavbarLinkProps) {
+  const { classes, cx } = useStyles();
+
+  return (
+    <Tooltip label={label} position="right" transitionDuration={100}>
+      {to ? (
+        <Link to={to}>
+          <UnstyledButton
+            onClick={onClick}
+            className={cx(classes.link, { [classes.active]: active }, "mt-1")}
+          >
+            <Icon stroke={1.5} />
+          </UnstyledButton>
+        </Link>
+      ) : (
+        <UnstyledButton
+          onClick={onClick}
+          className={cx(classes.link, { [classes.active]: active }, "mt-1")}
+        >
+          <Icon stroke={1.5} />
+        </UnstyledButton>
+      )}
+    </Tooltip>
+  );
+}
 
 export default function App() {
+  const theme = useMantineTheme();
   const { token, tfa_required, logout } = useAuth();
   const [user, setUser] = useState<any>(null);
+  const { pathname } = useLocation();
+
+  const currentRoute = "/" + (pathname + "/").split("/")[1];
 
   useEffect(() => {
     if (!token || tfa_required) return;
@@ -20,55 +128,106 @@ export default function App() {
   if (tfa_required) return <Navigate to="/tfa" />;
 
   return (
-    <>
-      <div className="container mx-auto">
-        <Navbar fluid={true} rounded={true}>
-          <Link to="">
-            <Navbar.Brand>
-              <img src={logo} className="mr-3 h-6 sm:h-9" alt="Logo" />
-              <span className="self-center whitespace-nowrap text-xl font-semibold dark:text-white">
-                Trandandan
-              </span>
-            </Navbar.Brand>
-          </Link>
-          <div className="flex md:order-2">
-            {user && (
-              <Dropdown
-                arrowIcon={false}
-                inline={true}
-                label={
-                  <Avatar
-                    alt="User settings"
-                    img={user.avatar}
-                    rounded={true}
-                  />
-                }
-              >
-                <Dropdown.Header>
-                  <span className="block text-sm font-medium">{user.name}</span>
-                </Dropdown.Header>
-                <Link to="profile">
-                  <Dropdown.Item>Profile</Dropdown.Item>
-                </Link>
-                <Dropdown.Item onClick={logout}>Sign out</Dropdown.Item>
-              </Dropdown>
-            )}
-            <Navbar.Toggle />
-          </div>
-          <Navbar.Collapse>
-            <Link to="">
-              <Navbar.Link active={true}>Home</Navbar.Link>
-            </Link>
-            <Link to="games">
-              <Navbar.Link>Games</Navbar.Link>
-            </Link>
-            <Link to="chat">
-              <Navbar.Link>Chat</Navbar.Link>
-            </Link>
-          </Navbar.Collapse>
+    <AppShell
+      styles={{
+        main: {
+          background:
+            theme.colorScheme === "dark"
+              ? theme.colors.dark[8]
+              : theme.colors.gray[0],
+        },
+      }}
+      navbarOffsetBreakpoint="sm"
+      asideOffsetBreakpoint="sm"
+      navbar={
+        <Navbar width={{ base: 80 }} p="md">
+          <Center>
+            <img src={logo} className="h-8" alt="Logo" />
+          </Center>
+          <Navbar.Section grow mt={12}>
+            <Stack justify="center" spacing={0}>
+              {routes.map((link) => (
+                <NavbarLink
+                  {...link}
+                  key={link.label}
+                  active={link.to === currentRoute}
+                  to={link.to}
+                />
+              ))}
+            </Stack>
+          </Navbar.Section>
+          <Navbar.Section>
+            <Stack justify="center" spacing={0}>
+              <NavbarLink
+                active={currentRoute === "/profile"}
+                to="/profile"
+                icon={IconUserCircle}
+                label="Profile"
+              />
+              <NavbarLink onClick={logout} icon={IconLogout} label="Logout" />
+            </Stack>
+          </Navbar.Section>
         </Navbar>
+      }
+      aside={
+        <div className="hidden lg:block">
+          <Aside p="md" hiddenBreakpoint="sm" width={{ sm: 200, lg: 300 }}>
+            {user && (
+              <Link to={`/users/${user.id}`}>
+                <UnstyledButton
+                  sx={{
+                    display: "block",
+                    width: "100%",
+                    padding: theme.spacing.xs,
+                    borderRadius: theme.radius.sm,
+                    color:
+                      theme.colorScheme === "dark"
+                        ? theme.colors.dark[0]
+                        : theme.black,
+
+                    "&:hover": {
+                      backgroundColor:
+                        theme.colorScheme === "dark"
+                          ? theme.colors.dark[6]
+                          : theme.colors.gray[0],
+                    },
+                  }}
+                >
+                  <Group>
+                    <Avatar src={user.avatar} radius="xl" size="sm" />
+                    <Box sx={{ flex: 1 }}>
+                      <Text size="sm" weight={500}>
+                        {user.name}
+                      </Text>
+                    </Box>
+
+                    {theme.dir === "ltr" ? (
+                      <IconChevronRight size={18} />
+                    ) : (
+                      <IconChevronLeft size={18} />
+                    )}
+                  </Group>
+                </UnstyledButton>
+              </Link>
+            )}
+            <Divider
+              my="xs"
+              variant="dotted"
+              labelPosition="center"
+              label={
+                <>
+                  <IconHeartHandshake size={12} />
+                  <Box ml={5}>Your friends:</Box>
+                </>
+              }
+            />
+          </Aside>
+        </div>
+      }
+    >
+      <div className="container mx-auto min-h-full flex flex-col">
         <Outlet />
       </div>
-    </>
+    </AppShell>
   );
 }

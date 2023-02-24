@@ -1,8 +1,27 @@
-import { Button } from "flowbite-react";
+import {
+  Card,
+  Group,
+  Text,
+  Button,
+  Loader,
+  CopyButton,
+  Input,
+  SimpleGrid,
+  FileInput,
+  TextInput,
+} from "@mantine/core";
+import { useForm } from "@mantine/form";
+import { IconUpload } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import PinField from "react-pin-field";
 import { api } from "../utils";
+
+const Loading = () => (
+  <div className="flex justify-center items-center h-full">
+    <Loader variant="dots" />
+  </div>
+);
 
 function EnableTfa({ reload }: { reload: () => void }) {
   const [qr, setQr] = useState<string>();
@@ -40,31 +59,39 @@ function EnableTfa({ reload }: { reload: () => void }) {
     );
   };
 
+  if (loading) return <Loading />;
+
   return (
-    <div className="shadow">
-      <h2>Enable authenticator app</h2>
-      <p>
+    <div className="flex flex-col items-center text-center">
+      <div>
         To enable 2FA, you will have to install an authenticator app on your
         phone. You can use Google Authenticator, Authy, or any other app that is
         compatible with the TOTP standard.
-      </p>
-      {loading ? (
-        <p>Loading...</p>
-      ) : (
-        <>
-          <p>Scan the QR code below with your authenticator app:</p>
-          <img src={qr} />
-          <p>Or enter the secret manually:</p>
-          <p>{secret}</p>
-          <PinField
-            className="pin-field"
-            validate="0123456789"
-            inputMode="numeric"
-            length={6}
-            onComplete={validate}
-          />
-        </>
-      )}
+      </div>
+      <div className="pt-2">
+        Scan the QR code below with your authenticator app:
+      </div>
+      <img src={qr} />
+      <div className="py-2">Or enter the secret manually:</div>
+      <CopyButton value={secret as string}>
+        {({ copied, copy }) => (
+          <Input onClick={copy} component="button">
+            {copied ? "Copied!" : secret}
+          </Input>
+        )}
+      </CopyButton>
+      <div className="pt-4 pb-2">
+        Enter the code from your authenticator app:
+      </div>
+      <div>
+        <PinField
+          className="pin-field"
+          validate="0123456789"
+          inputMode="numeric"
+          length={6}
+          onComplete={validate}
+        />
+      </div>
     </div>
   );
 }
@@ -72,6 +99,18 @@ function EnableTfa({ reload }: { reload: () => void }) {
 function Profile() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>();
+  const form = useForm({
+    initialValues: {
+      avatar: "",
+      name: user?.name,
+    },
+    validate: {
+      name: (value) =>
+        !value || value.length < 3
+          ? "Name must be at least 3 characters"
+          : null,
+    },
+  });
 
   const load = () => {
     setLoading(true);
@@ -101,19 +140,66 @@ function Profile() {
     load();
   }, []);
 
+  if (loading) return <Loading />;
+
   return (
     <div>
-      <h1>Profile</h1>
-      {loading ? (
-        <p>Loading...</p>
-      ) : user.tfa ? (
-        <p>
-          2FA is enabled
-          <Button onClick={disable2FA}>Disable</Button>
-        </p>
-      ) : (
-        <EnableTfa reload={load} />
-      )}
+      <h1 className="mt-0">Profile</h1>
+      <SimpleGrid
+        cols={2}
+        spacing="lg"
+        breakpoints={[{ maxWidth: 980, cols: 1, spacing: "md" }]}
+      >
+        <Card withBorder shadow="sm" radius="md">
+          <Card.Section withBorder inheritPadding py="xs">
+            <Group position="apart">
+              <Text weight={500}>Two Factor Authentication</Text>
+            </Group>
+          </Card.Section>
+          <Card.Section py="md" inheritPadding>
+            {user.tfa ? (
+              <div>
+                <div className="mb-2">
+                  Two factor auth is enabled. You can disable it below.
+                </div>
+                <Button color="red" onClick={disable2FA}>
+                  Disable 2FA
+                </Button>
+              </div>
+            ) : (
+              <EnableTfa reload={load} />
+            )}
+          </Card.Section>
+        </Card>
+        <Card withBorder shadow="sm" radius="md">
+          <Card.Section withBorder inheritPadding py="xs">
+            <Group position="apart">
+              <Text weight={500}>User details</Text>
+            </Group>
+          </Card.Section>
+          <Card.Section py="md" inheritPadding>
+            <form onSubmit={form.onSubmit((values) => console.log(values))}>
+              <FileInput
+                label="Your avatar"
+                placeholder="Select an image"
+                accept="image/png,image/jpeg"
+                icon={<IconUpload size={14} />}
+                {...form.getInputProps("avatar")}
+              />
+              <TextInput
+                mt="md"
+                withAsterisk
+                label="Display name"
+                placeholder="Enter a name"
+                {...form.getInputProps("name")}
+              />
+              <Group position="right" mt="md">
+                <Button type="submit">Save</Button>
+              </Group>
+            </form>
+          </Card.Section>
+        </Card>
+      </SimpleGrid>
     </div>
   );
 }

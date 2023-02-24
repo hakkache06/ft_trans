@@ -1,4 +1,3 @@
-import { Flowbite } from "flowbite-react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Home from "./app/Home";
@@ -9,6 +8,9 @@ import Login from "./guest/Login";
 import { Toaster } from "react-hot-toast";
 import Tfa from "./guest/Tfa";
 import Profile from "./app/Profile";
+import { MantineProvider } from "@mantine/core";
+import Chat from "./app/Chat";
+import Room, { Welcome } from "./app/Room";
 
 export const router = createBrowserRouter([
   {
@@ -19,6 +21,20 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <Home />,
+      },
+      {
+        path: "/chat",
+        element: <Chat />,
+        children: [
+          {
+            index: true,
+            element: <Welcome />,
+          },
+          {
+            path: ":id",
+            element: <Room />,
+          },
+        ],
       },
       {
         path: "/profile",
@@ -38,9 +54,9 @@ export const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <>
-    <Flowbite>
+    <MantineProvider withGlobalStyles withNormalizeCSS>
       <RouterProvider router={router} />
-    </Flowbite>
+    </MantineProvider>
     <Toaster />
   </>
 );
