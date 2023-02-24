@@ -26,8 +26,9 @@ export class UserController {
   constructor(private userService: UserService) {}
   //fetch All_user
   @Get()
-  fetchAlluser(@Body() b, @Res() res: Response) {
-    return this.userService.fetchAlluser(b, res);
+  @UseGuards(JwtGuard)
+  fetchAlluser() {
+    return this.userService.fetchAlluser();
   }
   @Get('profile')
   @UseGuards(JwtGuard)
@@ -36,20 +37,24 @@ export class UserController {
   }
   //fetchByid
   @Get(':id')
-  getOneUser(@Param('id') idUser: string, @Res() res: Response) {
-    return this.userService.getOneUser(idUser, res);
+  @UseGuards(JwtGuard)
+  getOneUser(@Param('id') idUser: string) {
+    return this.userService.getOneUser(idUser);
   }
   //updateUser by Id
   @Patch(':id')
-  updateUserbyId(@Param('id') idUser: string, @Body() b, @Res() res: Response) {
-    return this.userService.updateUserbyId(idUser, b, res);
+  @UseGuards(JwtGuard)
+  updateUserbyId(@Param('id') idUser: string, @Body() b) {
+    return this.userService.updateUserbyId(idUser, b);
   }
   //deleteUser By Id
   @Delete(':id')
-  deleteUserbyId(@Param('id') idUser: string, @Res() res: Response) {
-    return this.userService.deleteUserbyId(idUser, res);
+  @UseGuards(JwtGuard)
+  deleteUserbyId(@Param('id') idUser: string) {
+    return this.userService.deleteUserbyId(idUser);
   }
   @Post('upload')
+  @UseGuards(JwtGuard)
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({

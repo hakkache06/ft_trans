@@ -20,6 +20,8 @@ export class FriendsService {
 
   async addFrineds(idUser: string, b, req) {
     try {
+      //need check blocked
+      if (idUser === req.user.id) return { meassgae: `Error` };
       const checkuser = await this.prisma.User.findMany({
         where: { id: idUser },
       });
@@ -35,6 +37,8 @@ export class FriendsService {
               accepted: true,
             },
           });
+          if (createcheckuser) return { meassgae: `Add id ${idUser} Friend ` };
+          else return { meassgae: ` Error Add ` };
         } else {
           return { meassgae: `id ${idUser}  found in table Friends` };
         }
@@ -48,6 +52,7 @@ export class FriendsService {
 
   async removeFriends(idUser: string, req) {
     try {
+      if (idUser === req.user.id) return { meassgae: `Error` };
       const removedFriend = await this.prisma.friend.deleteMany({
         where: {
           OR: [
@@ -62,7 +67,8 @@ export class FriendsService {
           ],
         },
       });
-      return { meassgae: `id removed ${idUser}` };
+      if (removedFriend) return { meassgae: `id removed ${idUser}` };
+      else return { meassgae: `Error removed` };
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;
     }
