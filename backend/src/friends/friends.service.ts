@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import console from 'console';
+import { async } from 'rxjs';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -21,6 +22,7 @@ export class FriendsService {
 
   async addFrineds(idUser: string, b, res) {
     try {
+      //console.log(req);
       const checkuser = await this.prisma.User.findMany({
         where: { id: idUser },
       });
@@ -33,7 +35,7 @@ export class FriendsService {
           const createcheckuser = await this.prisma.friend.create({
             data: {
               to_id: idUser,
-              from_id: '2e9655b9-654c-49da-bb4d-996d8c752067',
+              from_id: '1c609a32-6405-4f80-801d-bea9d8010724', // UseGuards(JwtGuard)
               accepted: true,
             },
           });
@@ -43,6 +45,27 @@ export class FriendsService {
         }
       } else {
         res.send('user not exist');
+      }
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;
+    }
+  }
+
+  async removeFriends(idUser: string, b, res) {
+    try {
+      let removedFriend = await this.prisma.friend.delete({
+        where: {
+          from_id: '',
+          to_id: idUser,
+        },
+      });
+      if (!removedFriend) {
+        removedFriend = await this.prisma.friend.delete({
+          where: {
+            from_id: idUser,
+            to_id: '',
+          },
+        });
       }
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;

@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Param, Post, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
+import { JwtGuard } from 'src/auth/guards';
 import { FriendsService } from './friends.service';
 
 @Controller('friends')
@@ -15,11 +25,17 @@ export class FriendsController {
   // in table
   // id == from_id
   @Post(':id')
-  addFriends(@Param('id') idUser: string, @Body() b, @Res() res: Response) {
+  //@UseGuards(JwtGuard)
+  addFriends(
+    @Param('id') idUser: string,
+    @Body() b,
+    @Res() res: Response,
+    //@Req() req,
+  ) {
     return this.friendsService.addFrineds(idUser, b, res);
   }
   @Post('')
-  removeFriends() {
-    return 'sd';
+  removeFriends(@Param('id') idUser: string, @Body() b, @Res() res: Response) {
+    return this.friendsService.removeFriends(idUser, b, res);
   }
 }
