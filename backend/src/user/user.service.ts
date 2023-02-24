@@ -20,6 +20,14 @@ export class UserService {
     }
   }
 
+  getProfile(id: string) {
+    return this.prisma.user.findUnique({
+      where: {
+        id,
+      },
+    });
+  }
+
   async getOneUser(idUser: string, res) {
     try {
       const fetchByid = await this.prisma.user.findUnique({

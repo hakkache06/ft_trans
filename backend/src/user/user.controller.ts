@@ -6,25 +6,33 @@ import {
   Param,
   Patch,
   Post,
+  Req,
   Res,
   UploadedFile,
   UploadedFiles,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { Express } from 'express';
+import { Request, Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 import { UserService } from './user.service';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { JwtGuard } from 'src/auth/guards';
 
 @Controller('user')
 export class UserController {
   constructor(private userService: UserService) {}
   //fetch All_user
-  @Get('profile')
+  @Get()
   fetchAlluser(@Body() b, @Res() res: Response) {
     return this.userService.fetchAlluser(b, res);
+  }
+  @Get('profile')
+  @UseGuards(JwtGuard)
+  getProfile(@Req() req: Request) {
+    return this.userService.getProfile(req.user.id);
   }
   //fetchByid
   @Get(':id')
