@@ -20,7 +20,7 @@ export class FriendsService {
     }
   }
 
-  async addFrineds(idUser: string, b, res) {
+  async addFrineds(idUser: string, b, res, req) {
     try {
       //console.log(req);
       const checkuser = await this.prisma.User.findMany({

@@ -25,14 +25,14 @@ export class FriendsController {
   // in table
   // id == from_id
   @Post(':id')
-  //@UseGuards(JwtGuard)
+  @UseGuards(JwtGuard)
   addFriends(
     @Param('id') idUser: string,
     @Body() b,
     @Res() res: Response,
-    //@Req() req,
+    @Req() req,
   ) {
-    return this.friendsService.addFrineds(idUser, b, res);
+    return this.friendsService.addFrineds(idUser, b, res, req);
   }
   @Post('')
   removeFriends(@Param('id') idUser: string, @Body() b, @Res() res: Response) {
