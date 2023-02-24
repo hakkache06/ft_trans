@@ -1,14 +1,14 @@
 import {
+  BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Post,
   Query,
   Redirect,
   Req,
-  Res,
-  UnauthorizedException,
   UseGuards,
   UsePipes,
   ValidationPipe,
@@ -25,7 +25,11 @@ export class AuthController {
 
   @Get('/redirect')
   @Redirect(
-    'https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-8dac923a7faa5e271e7a48b1823cd099d6b981eb5193dca17613e24b4cd72ca5&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fauth&response_type=code',
+    `https://api.intra.42.fr/oauth/authorize?client_id=${
+      process.env.CLIENT_ID
+    }&redirect_uri=${encodeURIComponent(
+      process.env.REDIRECT_URL,
+    )}&response_type=code`,
     301,
   )
   redirect() {}
@@ -56,12 +60,15 @@ export class AuthController {
       body.secret,
     );
     if (!isCodeValid) {
-      throw new UnauthorizedException('Wrong authentication code');
+      throw new BadRequestException('Wrong authentication code');
     }
-    return this.authService.turnOnTwoFactorAuthentication(req.user, body.secret);
+    return this.authService.turnOnTwoFactorAuthentication(
+      req.user,
+      body.secret,
+    );
   }
 
-  @Get('2fa/turn-off')
+  @Delete('2fa/turn-off')
   @UseGuards(JwtGuard)
   async turn_off_2f_auth(@Req() req: Request) {
     return this.authService.turnOffTwoFactorAuthentication(req.user);
@@ -69,20 +76,8 @@ export class AuthController {
 
   @Post('2fa/authenticate')
   @HttpCode(200)
-  @UseGuards(JwtGuard)
+  @UseGuards(Jwt2faGuard)
   async authenticate(@Req() req, @Body() body) {
     return this.authService.authenticate2f(req.user, body);
-  }
-
-  @Get('2frequired')
-  @UseGuards(Jwt2faGuard)
-  async test() {
-    return 'Successfully authenticated with 2F';
-  }
-
-  @Get('2fnotrequired')
-  @UseGuards(JwtGuard)
-  async test2() {
-    return 'Successfully authenticated without 2F';
   }
 }
