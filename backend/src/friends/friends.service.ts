@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import console from 'console';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -12,10 +14,8 @@ export class FriendsService {
       res.send({
         fetch,
       });
-    } catch (error) {
-      res.send({
-        meassge: 'error fom prisma',
-      });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;
     }
   }
 
@@ -25,28 +25,27 @@ export class FriendsService {
         where: { id: idUser },
       });
       // Id Wach kayen
-      if (checkuser) {
-        const checkuser = await this.prisma.friend.findMany({
-          where: { from_id: idUser },
+      if (Object.entries(checkuser).length !== 0) {
+        const newcheckuser = await this.prisma.friend.findMany({
+          where: { to_id: idUser },
         });
-        if (!checkuser) {
-          const checkuser = await this.prisma.friend.create({
+        if (Object.entries(newcheckuser).length === 0) {
+          const createcheckuser = await this.prisma.friend.create({
             data: {
-              to_id: b.id,
-              from_id: '2e9655b9-654c-49da-bb4d-996d8c75206we',
+              to_id: idUser,
+              from_id: '2e9655b9-654c-49da-bb4d-996d8c752067',
               accepted: true,
             },
           });
+          res.send({ message: 'cretae Valid' });
         } else {
-          res.send({ meassge: 'exist' });
+          res.send('exist in table friends');
         }
       } else {
-        res.send({ meassge: 'not exist' });
+        res.send('user not exist');
       }
-    } catch (error) {
-      res.send({
-        meassge: 'error from prisma',
-      });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;
     }
   }
 }
