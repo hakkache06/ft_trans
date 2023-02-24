@@ -9,24 +9,20 @@ export class FriendsService {
   constructor(private prisma: PrismaService) {}
 
   //Fetch user By name (?)
-  async fetchAllfriends(b, res) {
+  async fetchAllfriends(b) {
     try {
       const fetch = await this.prisma.friend.findMany({});
-      res.send({
-        fetch,
-      });
+      return fetch;
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;
     }
   }
 
-  async addFrineds(idUser: string, b, res, req) {
+  async addFrineds(idUser: string, b, req) {
     try {
-      //console.log(req);
       const checkuser = await this.prisma.User.findMany({
         where: { id: idUser },
       });
-      // Id Wach kayen
       if (Object.entries(checkuser).length !== 0) {
         const newcheckuser = await this.prisma.friend.findMany({
           where: { to_id: idUser },
@@ -35,40 +31,42 @@ export class FriendsService {
           const createcheckuser = await this.prisma.friend.create({
             data: {
               to_id: idUser,
-              from_id: '1c609a32-6405-4f80-801d-bea9d8010724', // UseGuards(JwtGuard)
+              from_id: req.user.id, // UseGuards(JwtGuard)
               accepted: true,
             },
           });
-          res.send({ message: 'cretae Valid' });
         } else {
-          res.send('exist in table friends');
+          return { meassgae: `id ${idUser}  found in table Friends` };
         }
       } else {
-        res.send('user not exist');
+        return { meassgae: `id ${idUser} not found in table Users` };
       }
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;
     }
   }
 
-  async removeFriends(idUser: string, b, res) {
+  async removeFriends(idUser: string, req) {
     try {
-      let removedFriend = await this.prisma.friend.delete({
+      const removedFriend = await this.prisma.friend.deleteMany({
         where: {
-          from_id: '',
-          to_id: idUser,
+          OR: [
+            {
+              from_id: req.user.id,
+              to_id: idUser,
+            },
+            {
+              from_id: idUser,
+              to_id: req.user.id,
+            },
+          ],
         },
       });
-      if (!removedFriend) {
-        removedFriend = await this.prisma.friend.delete({
-          where: {
-            from_id: idUser,
-            to_id: '',
-          },
-        });
-      }
+      return { meassgae: `id removed ${idUser}` };
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;
     }
   }
 }
+
+//Authorization: Bearer <token>
