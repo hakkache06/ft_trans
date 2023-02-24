@@ -80,7 +80,7 @@ model RoomUser {
 model Message {
   id         Int      @id @unique @default(autoincrement())
   content    String
-  created_at DateTime
+  created_at DateTime @default(now())
   room       Room     @relation(fields: [room_id], references: [id], onDelete: Cascade)
   room_id    Int
   user       User     @relation(fields: [from_id], references: [id], onDelete: Cascade)
