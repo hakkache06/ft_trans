@@ -81,13 +81,11 @@ export class AuthService {
       expiresIn: '15m',
       secret,
     });
-      console.log(token);
 
     return {
       access_token: token,
     };
   }
-
   async generate_2f_auth(user: any) {
     const secret = authenticator.generateSecret();
     const otpauthUrl = authenticator.keyuri(
