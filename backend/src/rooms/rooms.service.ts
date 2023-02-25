@@ -111,7 +111,7 @@ export class RoomsService {
           id: idRoom,
         },
       });
-      if (!room) throw 'Room not found';
+      if (!room) throw new HttpException("Room not found", 404);
       if (req.user.id === room.id_user_owner) {
         const roomDeleted = await this.prisma.room.delete({
           where: {
@@ -131,7 +131,7 @@ export class RoomsService {
         ban: true,
       },
     });
-    if (checkIfBanned) throw new HttpException('User Banned', 401);
+    if (checkIfBanned) throw new HttpException('User Banned', 403);
     const roomUser = await this.prisma.roomUser.create({
       data: {
         user_id: req.user.id,
@@ -152,7 +152,7 @@ export class RoomsService {
         admin: true,
       },
     });
-    if (!isAdmin) throw new HttpException('Unauthorized', 401);
+    if (!isAdmin) throw new HttpException('User does not have the right to kick users', 403);
     const roomUser = await this.prisma.roomUser.deleteMany({
       where: {
         user_id: idUser,
@@ -174,7 +174,7 @@ export class RoomsService {
         admin: true,
       },
     });
-    if (!isAdmin) throw new HttpException('Unauthorized', 401);
+    if (!isAdmin) throw new HttpException('User does not have the right to ban, mute or set as administrator users', 403);
     const roomUser = await this.prisma.roomUser.updateMany({
       where: {
         user_id: idUser,
