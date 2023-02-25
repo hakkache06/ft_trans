@@ -12,6 +12,8 @@ import { verify } from 'jsonwebtoken';
 import { Socket, Server } from 'socket.io';
 import { MessagesService } from 'src/messages/messages.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { RoomsService } from './rooms.service';
+import { HttpException } from '@nestjs/common';
 
 @WebSocketGateway({
   cors: {
@@ -23,7 +25,7 @@ export class RoomsGateway
 {
   private readonly idUserToSocketIdMap: Map<string, Set<string>> = new Map();
   @WebSocketServer() server: Server;
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private roomsService: RoomsService) {}
 
   @SubscribeMessage('postMessage')
   handleEvent(@MessageBody() payload: any, @ConnectedSocket() client: Socket) {
@@ -39,7 +41,7 @@ export class RoomsGateway
     });
   }
 
-  fetchUser(idClient) {
+  fetchUser(idClient: string) {
     const idUser = [...this.idUserToSocketIdMap.keys()].find((id) => {
       console.log(id, idClient, this.idUserToSocketIdMap.get(id));
       return this.idUserToSocketIdMap.get(id).has(idClient);
@@ -47,6 +49,12 @@ export class RoomsGateway
     return idUser;
   }
 
+  verifyToken(token: string) {
+    const { id } = verify(token, process.env.JWT_SECRET) as {
+      id: string;
+    };
+    return id;
+  }
   afterInit(server: Server) {}
 
   handleDisconnect(client: Socket) {
@@ -73,10 +81,7 @@ export class RoomsGateway
   handleConnection(client: Socket, ...args: any[]) {
     console.log(`Connected ${client.id}`);
     try {
-      const { id } = verify(
-        client.handshake.auth.token,
-        process.env.JWT_SECRET,
-      ) as { id: string };
+      const id = this.verifyToken(client.handshake.auth.token);
       console.log(`User connected ${id}`);
       const socket_ids = new Set<string>(
         this.idUserToSocketIdMap.get(id) || [],
@@ -90,24 +95,34 @@ export class RoomsGateway
     }
   }
 
-  async joinRoom(idUser: string, idRoom: string) {
-    const socketInstance = await (async () => {
-      const sockets = await this.server.fetchSockets();
-      for (let socket of sockets)
-        if (this.idUserToSocketIdMap[idUser].includes(socket.id))
-          return this.idUserToSocketIdMap[idUser].find(socket.id);
-    })();
-    socketInstance.join(String(idRoom));
+  @SubscribeMessage('joinRoom')
+  async joinRoom(
+    @MessageBody() payload: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      const idUser = this.fetchUser(client.id);
+      console.log(`User ${idUser} joined room : ${payload}`);
+      // if (!idUser) throw new HttpException('User not found', 404);
+      // this.roomsService.joinRoom(payload.room, idUser);
+      client.join(payload);
+    } catch (e) {
+      return e;
+    }
   }
 
-  async leaveRoom(idUser: string, idRoom: string) {
-    const socketInstance = await (async () => {
-      const sockets = await this.server.fetchSockets();
-      for (let socket of sockets)
-        if (this.idUserToSocketIdMap[idUser].includes(socket.id))
-          return this.idUserToSocketIdMap[idUser].find(socket.id);
-    })();
-    socketInstance.leave(String(idRoom));
+  @SubscribeMessage('leaveRoom')
+  async leaveRoom(
+    @MessageBody() payload: any,
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      const idUser = this.fetchUser(client.id);
+      console.log(`User ${idUser} left room : ${payload.room}`);
+      if (!idUser) return;
+      client.leave(payload.room);
+    } catch (e) {
+      return e;
+    }
   }
-
 }

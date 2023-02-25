@@ -128,7 +128,14 @@ export class RoomsService {
   }
 
   async joinRoom(idRoom: string, req: any) {
-    const roomUser = this.prisma.roomUser.create({
+    const checkIfBanned = await this.prisma.roomUser.findMany({
+      where: {
+        user_id: req.user.id,
+        ban: true,
+      },
+    });
+    if (checkIfBanned) throw new HttpException('User Banned', 401);
+    const roomUser = await this.prisma.roomUser.create({
       data: {
         user_id: req.user.id,
         room_id: idRoom,
@@ -137,7 +144,6 @@ export class RoomsService {
         mute: null,
       },
     });
-    this.roomsGateway.joinRoom(req.user.id, idRoom);
     return roomUser;
   }
 
@@ -156,7 +162,6 @@ export class RoomsService {
         room_id: idRoom,
       },
     });
-    this.roomsGateway.leaveRoom(idUser, idRoom);
   }
 
   async updateUser(
