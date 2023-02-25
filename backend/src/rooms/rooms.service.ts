@@ -189,7 +189,6 @@ export class RoomsService {
         mute: body.mute,
       },
     });
-    if (body.ban) this.roomsGateway.leaveRoom(idUser, idRoom);
     return roomUser;
   }
 }
