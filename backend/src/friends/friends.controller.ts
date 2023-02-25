@@ -31,11 +31,28 @@ export class FriendsController {
     @Body() b,
     @Req() req: Request,
   ) {
-    return this.friendsService.addFrineds(idUser, b, req);
+    return this.friendsService.addFrineds(idUser, req);
   }
   @Post('/delete/:id')
   @UseGuards(JwtGuard)
   removeFriends(@Param('id') idUser: string, @Req() req: Request) {
     return this.friendsService.removeFriends(idUser, req);
   }
+
+  @Post('/accepteFriend/:id')
+  @UseGuards(JwtGuard)
+  acceptFriends(@Param('id') idUser: string, @Req() req: Request) {
+    return this.friendsService.acceptFriends(req);
+  }
+  // get Friends()
+  @Get('/getfriends')
+  @UseGuards(JwtGuard)
+  getFriends(@Req() req: Request) {
+    return this.friendsService.getFriends(req);
+  }
+  // Accepte add Friend
 }
+// Cancel add friend
+// block , unblock
+
+//    res.status(HttpStatus.CREATED).send();

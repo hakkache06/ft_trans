@@ -18,10 +18,11 @@ export class FriendsService {
     }
   }
 
-  async addFrineds(idUser: string, b, req) {
+  async addFrineds(idUser: string, req) {
     try {
       //need check blocked
-      if (idUser === req.user.id) return { meassgae: `Error` };
+      if (idUser === req.user.id)
+        return { meassgae: `It is not possible to add yourself!` };
       const checkuser = await this.prisma.User.findMany({
         where: { id: idUser },
       });
@@ -34,7 +35,7 @@ export class FriendsService {
             data: {
               to_id: idUser,
               from_id: req.user.id, // UseGuards(JwtGuard)
-              accepted: true,
+              accepted: false,
             },
           });
           if (createcheckuser) return { meassgae: `Add id ${idUser} Friend ` };
@@ -69,6 +70,30 @@ export class FriendsService {
       });
       if (removedFriend) return { meassgae: `id removed ${idUser}` };
       else return { meassgae: `Error removed` };
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;
+    }
+  }
+
+  async acceptFriends(req) {
+    const accepted = await this.prisma.friend.update({
+      where: {
+        to_id: req.user.id,
+      },
+      data: {
+        accepted: true,
+      },
+    });
+    if (accepted) return { message: 'Friend Accepted' };
+  }
+
+  async getFriends(req) {
+    try {
+      const getFriends = await this.prisma.friend.findMany({
+        where: { from_id: req.user.id },
+      });
+      if (getFriends) return { getFriends };
+      else return 'Erroe getFriends';
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;
     }

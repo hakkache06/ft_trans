@@ -17,7 +17,7 @@ import { Request, Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 import { UserService } from './user.service';
-import { diskStorage } from 'multer';
+import { diskStorage, MulterError } from 'multer';
 import { extname } from 'path';
 import { JwtGuard } from 'src/auth/guards';
 
@@ -57,6 +57,13 @@ export class UserController {
   @UseGuards(JwtGuard)
   @UseInterceptors(
     FileInterceptor('image', {
+      fileFilter: (req, file, cb) => {
+        if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/))
+          cb(null, true);
+        else {
+          cb(new MulterError('LIMIT_UNEXPECTED_FILE', 'image'), false);
+        }
+      },
       storage: diskStorage({
         destination: './files',
         filename: (req, file, callback) => {
@@ -66,7 +73,7 @@ export class UserController {
           callback(null, filename);
         },
       }),
-    }),
+    }) ,
   )
   uploadFile(@UploadedFile() file: Express.Multer.File) {
     return file;

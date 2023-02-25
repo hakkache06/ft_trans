@@ -81,7 +81,7 @@ export class AuthService {
       expiresIn: '72h',
       secret,
     });
-
+    console.log(token);
     return {
       access_token: token,
     };
