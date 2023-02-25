@@ -6,7 +6,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { RoomsModule } from './rooms/rooms.module';
 import { RoomsUsersModule } from './rooms_users/rooms_users.module';
 import { FriendsModule } from './friends/friends.module';
-import { GammesModule } from './gammes/gammes.module';
+import { GamesModule } from './games/games.module';
 import { MessagesModule } from './messages/messages.module';
 import { TestController } from './test/test.controller';
 import { RoomsGateway } from './rooms/rooms.gateway';
@@ -28,7 +28,7 @@ import { join } from 'path';
     RoomsModule,
     RoomsUsersModule,
     FriendsModule,
-    GammesModule,
+    GamesModule,
     MessagesModule,
   ],
   controllers: [TestController],

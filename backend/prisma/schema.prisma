@@ -46,10 +46,10 @@ model Game {
   background    String
   player1       User?    @relation("playerone", fields: [player1_id], references: [id], onDelete: Cascade)
   player2       User?    @relation("playertwo", fields: [player2_id], references: [id], onDelete: Cascade)
-  player1_id    String   @unique
-  player2_id    String   @unique
-  player1_score Int
-  plyaer2_score Int
+  player1_id    String
+  player2_id    String
+  player1_score Int @default(0)
+  player2_score Int @default(0)
   created_at    DateTime @default(now())
 }
 
