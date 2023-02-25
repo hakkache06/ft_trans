@@ -25,7 +25,7 @@ export class RoomsGateway
 {
   private readonly idUserToSocketIdMap: Map<string, Set<string>> = new Map();
   @WebSocketServer() server: Server;
-  constructor(private prisma: PrismaService, private roomsService: RoomsService) {}
+  constructor(private prisma: PrismaService) {}
 
   @SubscribeMessage('postMessage')
   handleEvent(@MessageBody() payload: any, @ConnectedSocket() client: Socket) {

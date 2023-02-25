@@ -30,9 +30,6 @@ export class RoomsService {
         mute: null,
       },
     });
-
-    // this.roomsGateway.joinRoom(newRoom.id_user_owner, newRoom.id);
-
     return {
       newRoom,
       roomUser,
