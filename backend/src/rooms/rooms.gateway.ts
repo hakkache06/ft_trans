@@ -100,15 +100,10 @@ export class RoomsGateway
     @MessageBody() payload: string,
     @ConnectedSocket() client: Socket,
   ) {
-    try {
       const idUser = this.fetchUser(client.id);
+      if (!idUser) throw new HttpException('User not found', 404);
       console.log(`User ${idUser} joined room : ${payload}`);
-      // if (!idUser) throw new HttpException('User not found', 404);
-      // this.roomsService.joinRoom(payload.room, idUser);
       client.join(payload);
-    } catch (e) {
-      return e;
-    }
   }
 
   @SubscribeMessage('leaveRoom')
@@ -116,13 +111,9 @@ export class RoomsGateway
     @MessageBody() payload: any,
     @ConnectedSocket() client: Socket,
   ) {
-    try {
       const idUser = this.fetchUser(client.id);
+      if (!idUser) throw new HttpException('User not found', 404);
       console.log(`User ${idUser} left room : ${payload.room}`);
-      if (!idUser) return;
       client.leave(payload.room);
-    } catch (e) {
-      return e;
-    }
   }
 }
