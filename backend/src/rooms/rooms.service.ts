@@ -139,23 +139,19 @@ export class RoomsService {
   }
 
   async deleteRoom(idRoom: string, req: any) {
-    try {
-      const room = await this.prisma.room.findUnique({
+    const room = await this.prisma.room.findUnique({
+      where: {
+        id: idRoom,
+      },
+    });
+    if (!room) throw new HttpException('Room not found', 404);
+    if (req.user.id === room.id_user_owner) {
+      const roomDeleted = await this.prisma.room.delete({
         where: {
           id: idRoom,
         },
       });
-      if (!room) throw 'Room not found';
-      if (req.user.id === room.id_user_owner) {
-        const roomDeleted = await this.prisma.room.delete({
-          where: {
-            id: idRoom,
-          },
-        });
-      } else throw 'Not the right user';
-    } catch (e) {
-      return e;
-    }
+    } else new HttpException('User is not the owner to delete the room', 403);
   }
 
   async joinRoom(idRoom: string, req: any, password?: string) {
@@ -199,7 +195,11 @@ export class RoomsService {
         admin: true,
       },
     });
-    if (!isAdmin) throw new HttpException('Unauthorized', 401);
+    if (!isAdmin)
+      throw new HttpException(
+        'User does not have the right to kick users',
+        403,
+      );
     const roomUser = await this.prisma.roomUser.deleteMany({
       where: {
         user_id: idUser,
@@ -221,7 +221,11 @@ export class RoomsService {
         admin: true,
       },
     });
-    if (!isAdmin) throw new HttpException('Unauthorized', 401);
+    if (!isAdmin)
+      throw new HttpException(
+        'User does not have the right to ban, mute or set as administrator users',
+        403,
+      );
     const roomUser = await this.prisma.roomUser.updateMany({
       where: {
         user_id: idUser,

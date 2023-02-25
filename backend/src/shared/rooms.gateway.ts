@@ -120,13 +120,9 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: any,
     @ConnectedSocket() client: Socket,
   ) {
-    try {
-      const idUser = this.fetchUser(client.id);
-      console.log(`User ${idUser} left room : ${payload.room}`);
-      if (!idUser) return;
-      client.leave(payload.room);
-    } catch (e) {
-      return e;
-    }
+    const idUser = this.fetchUser(client.id);
+    if (!idUser) return;
+    console.log(`User ${idUser} left room : ${payload.room}`);
+    client.leave(payload.room);
   }
 }
