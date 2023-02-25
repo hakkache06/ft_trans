@@ -1,10 +1,15 @@
-import { IsNotEmpty, IsOptional, IsIn } from 'class-validator';
+import { RoomType } from '@prisma/client';
+import { IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
 
 export class UpdateRoomDto {
   @IsNotEmpty()
   @IsOptional()
-  @IsIn(["public", "private", "protected"])
-  type: string;
+  name: string;
+
+  @IsNotEmpty()
+  @IsOptional()
+  @IsEnum(RoomType)
+  type: RoomType;
 
   @IsNotEmpty()
   @IsOptional()

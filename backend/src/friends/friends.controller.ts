@@ -42,7 +42,7 @@ export class FriendsController {
   @Post('/accepteFriend/:id')
   @UseGuards(JwtGuard)
   acceptFriends(@Param('id') idUser: string, @Req() req: Request) {
-    return this.friendsService.acceptFriends(req);
+    return this.friendsService.acceptFriends(idUser, req);
   }
   // get Friends()
   @Get('/getfriends')

@@ -5,5 +5,5 @@ export class MessageDto {
   message: string;
 
   @IsNotEmpty()
-  room_id: number;
+  room_id: string;
 }

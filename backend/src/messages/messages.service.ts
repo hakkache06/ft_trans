@@ -18,7 +18,7 @@ export class MessagesService {
     return messages;
   }
 
-  async findMsgByRoomId(idRoom: number) {
+  async findMsgByRoomId(idRoom: string) {
     const userMessages = await this.prisma.message.findMany({
       where: {
         room_id: idRoom,

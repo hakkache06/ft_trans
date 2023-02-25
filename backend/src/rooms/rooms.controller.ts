@@ -36,7 +36,7 @@ export class RoomsController {
 
   @Get(':id')
   @UseGuards(JwtGuard)
-  async getOneRoom(@Param('id', ParseIntPipe) idRoom: number) {
+  async getOneRoom(@Param('id') idRoom: string) {
     return this.roomsService.getOneRoom(idRoom);
   }
 
@@ -44,7 +44,7 @@ export class RoomsController {
   @Put(':id')
   @UseGuards(JwtGuard)
   async update(
-    @Param('id', ParseIntPipe) idRoom: number,
+    @Param('id') idRoom: string,
     @Req() req: Request,
     @Body() body: UpdateRoomDto,
   ) {
@@ -53,26 +53,20 @@ export class RoomsController {
 
   @Delete(':id')
   @UseGuards(JwtGuard)
-  async deleteRoom(
-    @Param('id', ParseIntPipe) idRoom: number,
-    @Req() req: Request,
-  ) {
+  async deleteRoom(@Param('id') idRoom: string, @Req() req: Request) {
     return this.roomsService.deleteRoom(idRoom, req);
   }
 
   @Post(':id/users')
   @UseGuards(JwtGuard)
-  async joinRoom(
-    @Param('id', ParseIntPipe) idRoom: number,
-    @Req() req: Request,
-  ) {
+  async joinRoom(@Param('id') idRoom: string, @Req() req: Request) {
     return this.roomsService.joinRoom(idRoom, req);
   }
 
   @Delete(':id/users/:user_id')
   @UseGuards(JwtGuard)
   async kickUser(
-    @Param('id', ParseIntPipe) idRoom: number,
+    @Param('id') idRoom: string,
     @Param('user_id') idUser: string,
     @Req() req: Request,
   ) {
@@ -83,7 +77,7 @@ export class RoomsController {
   @Put(':id/users/:user_id')
   @UseGuards(JwtGuard)
   async updateUser(
-    @Param('id', ParseIntPipe) idRoom: number,
+    @Param('id') idRoom: string,
     @Param('user_id') idUser: string,
     @Body() body: RoomUserDto,
     @Req() req: Request,

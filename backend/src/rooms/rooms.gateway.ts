@@ -65,7 +65,7 @@ export class RoomsGateway
     }
   }
 
-  async joinRoom(idUser: string, idRoom: number) {
+  async joinRoom(idUser: string, idRoom: string) {
     const socketInstance = await (async () => {
       const sockets = await this.server.fetchSockets();
       for (let socket of sockets)
@@ -75,7 +75,7 @@ export class RoomsGateway
     socketInstance.join(String(idRoom));
   }
 
-  async leaveRoom(idUser: string, idRoom: number) {
+  async leaveRoom(idUser: string, idRoom: string) {
     const socketInstance = await (async () => {
       const sockets = await this.server.fetchSockets();
       for (let socket of sockets)

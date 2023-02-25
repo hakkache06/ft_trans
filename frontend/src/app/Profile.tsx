@@ -115,7 +115,7 @@ function EditProfile({ user }: { user: any }) {
                 return f;
               })(),
             })
-            .json<any>()
+            .json<{ url: string }>()
             .then((d) => ({
               ...values,
               avatar: d.url,
@@ -227,7 +227,7 @@ function Profile() {
         <Card withBorder shadow="sm" radius="md">
           <Card.Section withBorder inheritPadding py="xs">
             <Group position="apart">
-              <Text weight={500}>User details</Text>
+              <Text weight={500}>User Details</Text>
             </Group>
           </Card.Section>
           <Card.Section py="md" inheritPadding>

@@ -1,9 +1,8 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { RoomDto, RoomUserDto, UpdateRoomDto } from './dto';
 import { PrismaService } from '../prisma/prisma.service';
 import * as argon from 'argon2';
 import { RoomsGateway } from './rooms.gateway';
-import { type } from 'os';
 
 @Injectable()
 export class RoomsService {
@@ -19,6 +18,7 @@ export class RoomsService {
         type: body.type,
         password:
           body.type === 'protected' ? await argon.hash(body.password) : null,
+        name: body.name,
       },
     });
     const roomUser = await this.prisma.roomUser.create({
@@ -31,7 +31,7 @@ export class RoomsService {
       },
     });
 
-    this.roomsGateway.joinRoom(newRoom.id_user_owner, newRoom.id);
+    // this.roomsGateway.joinRoom(newRoom.id_user_owner, newRoom.id);
 
     return {
       newRoom,
@@ -54,11 +54,31 @@ export class RoomsService {
           },
         ],
       },
+      select: {
+        name: true,
+        id: true,
+        type: true,
+        RoomUser: {
+          select: {
+            user: {
+              select: {
+                avatar: true,
+              },
+            },
+          },
+          where: {
+            ban: false,
+          },
+        },
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
     });
     return getRooms;
   }
 
-  async getOneRoom(idRoom: number) {
+  async getOneRoom(idRoom: string) {
     try {
       const room = await this.prisma.room.findUnique({
         where: {
@@ -72,7 +92,7 @@ export class RoomsService {
     }
   }
 
-  async update(idRoom: number, req: any, body: UpdateRoomDto) {
+  async update(idRoom: string, req: any, body: UpdateRoomDto) {
     const updatedRooms = await this.prisma.room.updateMany({
       where: {
         id: idRoom,
@@ -87,7 +107,7 @@ export class RoomsService {
     return updatedRooms;
   }
 
-  async deleteRoom(idRoom: number, req: any) {
+  async deleteRoom(idRoom: string, req: any) {
     try {
       const room = await this.prisma.room.findUnique({
         where: {
@@ -107,7 +127,7 @@ export class RoomsService {
     }
   }
 
-  async joinRoom(idRoom: number, req: any) {
+  async joinRoom(idRoom: string, req: any) {
     const roomUser = this.prisma.roomUser.create({
       data: {
         user_id: req.user.id,
@@ -121,7 +141,7 @@ export class RoomsService {
     return roomUser;
   }
 
-  async kickUser(idRoom: number, idUser: string, req: any) {
+  async kickUser(idRoom: string, idUser: string, req: any) {
     const isAdmin = await this.prisma.roomUser.findFirst({
       where: {
         room_id: idRoom,
@@ -140,7 +160,7 @@ export class RoomsService {
   }
 
   async updateUser(
-    idRoom: number,
+    idRoom: string,
     idUser: string,
     body: RoomUserDto,
     req: any,

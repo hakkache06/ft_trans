@@ -75,10 +75,13 @@ export class FriendsService {
     }
   }
 
-  async acceptFriends(req) {
+  async acceptFriends(idUser: string, req) {
     const accepted = await this.prisma.friend.update({
       where: {
-        to_id: req.user.id,
+        from_id_to_id: {
+          from_id: idUser,
+          to_id: req.user.id,
+        },
       },
       data: {
         accepted: true,

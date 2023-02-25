@@ -27,8 +27,7 @@ export class MessagesController {
 
   @Get(':room_id')
   @UseGuards(JwtGuard)
-  async findMsgByRoomId(@Param('room_id', ParseIntPipe) idRoom: number) {
+  async findMsgByRoomId(@Param('room_id') idRoom: string) {
     return this.messageService.findMsgByRoomId(idRoom);
   }
-
 }

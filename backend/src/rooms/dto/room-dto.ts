@@ -1,8 +1,13 @@
-import { IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
+import { RoomType } from '@prisma/client';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class RoomDto {
   @IsNotEmpty()
-  type: string;
+  name: string;
+
+  @IsNotEmpty()
+  @IsEnum(RoomType)
+  type: RoomType;
 
   @IsString()
   @IsOptional()
