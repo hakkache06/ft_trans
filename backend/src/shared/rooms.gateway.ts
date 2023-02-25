@@ -1,6 +1,5 @@
 import {
   WebSocketGateway,
-  OnGatewayInit,
   WebSocketServer,
   OnGatewayConnection,
   OnGatewayDisconnect,
@@ -10,35 +9,47 @@ import {
 } from '@nestjs/websockets';
 import { verify } from 'jsonwebtoken';
 import { Socket, Server } from 'socket.io';
-import { MessagesService } from 'src/messages/messages.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { RoomsService } from './rooms.service';
-import { HttpException } from '@nestjs/common';
 
 @WebSocketGateway({
   cors: {
     origin: '*',
   },
 })
-export class RoomsGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
-{
+export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly idUserToSocketIdMap: Map<string, Set<string>> = new Map();
   @WebSocketServer() server: Server;
   constructor(private prisma: PrismaService) {}
 
-  @SubscribeMessage('postMessage')
-  handleEvent(@MessageBody() payload: any, @ConnectedSocket() client: Socket) {
-    this.server.to(payload.room).emit('postMessage', client.id, payload.data);
+  @SubscribeMessage('room:message:send')
+  async handleEvent(
+    @MessageBody() payload: any,
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!payload.content) return { done: false };
     const idUser = this.fetchUser(client.id);
-    if (!idUser) return;
-    const messages = this.prisma.message.create({
+    if (!idUser) return { done: false };
+    //check access
+    const message = await this.prisma.message.create({
       data: {
-        content: payload.data,
+        content: payload.content,
         from_id: idUser,
-        room_id: payload.room,
+        room_id: payload.room_id,
+      },
+      include: {
+        user: {
+          select: {
+            avatar: true,
+            name: true,
+            id: true,
+          },
+        },
       },
     });
+    this.server.to(message.room_id).emit('room:message:new', message);
+    return {
+      done: true,
+    };
   }
 
   fetchUser(idClient: string) {
@@ -55,7 +66,6 @@ export class RoomsGateway
     };
     return id;
   }
-  afterInit(server: Server) {}
 
   handleDisconnect(client: Socket) {
     console.log(`Disconnected: ${client.id}`);
@@ -78,7 +88,7 @@ export class RoomsGateway
     this.server.emit('users:online', [...this.idUserToSocketIdMap.keys()]);
   }
 
-  handleConnection(client: Socket, ...args: any[]) {
+  handleConnection(client: Socket) {
     console.log(`Connected ${client.id}`);
     try {
       const id = this.verifyToken(client.handshake.auth.token);
@@ -95,25 +105,24 @@ export class RoomsGateway
     }
   }
 
-  @SubscribeMessage('joinRoom')
+  @SubscribeMessage('room:join')
   async joinRoom(
     @MessageBody() payload: string,
     @ConnectedSocket() client: Socket,
   ) {
-      const idUser = this.fetchUser(client.id);
-      if (!idUser) throw new HttpException('User not found', 404);
-      console.log(`User ${idUser} joined room : ${payload}`);
-      client.join(payload);
+    const idUser = this.fetchUser(client.id);
+    console.log(`User ${idUser} joined room : ${payload}`);
+    client.join(payload);
   }
 
-  @SubscribeMessage('leaveRoom')
+  @SubscribeMessage('room:leave')
   async leaveRoom(
     @MessageBody() payload: any,
     @ConnectedSocket() client: Socket,
   ) {
-      const idUser = this.fetchUser(client.id);
-      if (!idUser) throw new HttpException('User not found', 404);
-      console.log(`User ${idUser} left room : ${payload.room}`);
-      client.leave(payload.room);
+    const idUser = this.fetchUser(client.id);
+    if (!idUser) return;
+    console.log(`User ${idUser} left room : ${payload.room}`);
+    client.leave(payload.room);
   }
 }

@@ -1,14 +1,11 @@
 import { Module } from '@nestjs/common';
+import { SharedModule } from 'src/shared/shared.module';
 import { RoomsController } from './rooms.controller';
 import { RoomsService } from './rooms.service';
-import { RoomsGateway } from './rooms.gateway';
 
 @Module({
   controllers: [RoomsController],
-  providers: [RoomsService, RoomsGateway]
+  providers: [RoomsService],
+  imports: [SharedModule],
 })
-export class RoomsModule {
-    
-}
-
-
+export class RoomsModule {}

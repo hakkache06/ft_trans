@@ -16,6 +16,7 @@ import {
 import { JwtGuard } from 'src/auth/guards';
 import { RoomDto, RoomUserDto, UpdateRoomDto } from './dto';
 import { RoomsService } from './rooms.service';
+import { Request } from 'express';
 
 @Controller('rooms')
 export class RoomsController {
@@ -36,8 +37,8 @@ export class RoomsController {
 
   @Get(':id')
   @UseGuards(JwtGuard)
-  async getOneRoom(@Param('id') idRoom: string) {
-    return this.roomsService.getOneRoom(idRoom);
+  async getOneRoom(@Param('id') idRoom: string, @Req() req: Request) {
+    return this.roomsService.getOneRoom(idRoom, req.user.id);
   }
 
   @UsePipes(new ValidationPipe())
@@ -59,8 +60,12 @@ export class RoomsController {
 
   @Post(':id/users')
   @UseGuards(JwtGuard)
-  async joinRoom(@Param('id') idRoom: string, @Req() req: Request) {
-    return this.roomsService.joinRoom(idRoom, req);
+  async joinRoom(
+    @Param('id') idRoom: string,
+    @Req() req: Request,
+    @Body() body,
+  ) {
+    return this.roomsService.joinRoom(idRoom, req, body?.password);
   }
 
   @Delete(':id/users/:user_id')

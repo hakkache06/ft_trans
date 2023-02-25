@@ -1,9 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { JwtGuard } from 'src/auth/guards';
 
