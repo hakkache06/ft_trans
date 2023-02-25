@@ -10,7 +10,6 @@ export class RoomsService {
   async createRoom(body: RoomDto, req: any) {
     const newRoom = await this.prisma.room.create({
       data: {
-        id_user_owner: req.user.id,
         type: body.type,
         password:
           body.type === 'protected' ? await argon.hash(body.password) : null,
@@ -19,8 +18,9 @@ export class RoomsService {
     });
     const roomUser = await this.prisma.roomUser.create({
       data: {
-        user_id: newRoom.id_user_owner,
+        user_id: req.user.id,
         room_id: newRoom.id,
+        owner: true,
         admin: true,
         ban: false,
         mute: null,
@@ -107,6 +107,7 @@ export class RoomsService {
                 avatar: true,
               },
             },
+            owner: true,
             admin: true,
             mute: true,
           },
@@ -117,7 +118,6 @@ export class RoomsService {
         id: true,
         name: true,
         password: true,
-        id_user_owner: true,
         type: true,
       },
     });
@@ -127,7 +127,12 @@ export class RoomsService {
     const updatedRooms = await this.prisma.room.updateMany({
       where: {
         id: idRoom,
-        id_user_owner: req.user.id,
+        RoomUser: {
+          some: {
+            owner: true,
+            user_id: req.user.id,
+          },
+        },
       },
       data: {
         type: body.type,
@@ -136,22 +141,6 @@ export class RoomsService {
       },
     });
     return updatedRooms;
-  }
-
-  async deleteRoom(idRoom: string, req: any) {
-    const room = await this.prisma.room.findUnique({
-      where: {
-        id: idRoom,
-      },
-    });
-    if (!room) throw new HttpException('Room not found', 404);
-    if (req.user.id === room.id_user_owner) {
-      const roomDeleted = await this.prisma.room.delete({
-        where: {
-          id: idRoom,
-        },
-      });
-    } else new HttpException('User is not the owner to delete the room', 403);
   }
 
   async joinRoom(idRoom: string, req: any, password?: string) {

@@ -52,12 +52,6 @@ export class RoomsController {
     return this.roomsService.update(idRoom, req, body);
   }
 
-  @Delete(':id')
-  @UseGuards(JwtGuard)
-  async deleteRoom(@Param('id') idRoom: string, @Req() req: Request) {
-    return this.roomsService.deleteRoom(idRoom, req);
-  }
-
   @Post(':id/users')
   @UseGuards(JwtGuard)
   async joinRoom(
