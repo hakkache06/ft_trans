@@ -7,7 +7,7 @@ import * as argon from 'argon2';
 export class RoomsService {
   constructor(private prisma: PrismaService) {}
 
-  async createRoom(body: RoomDto, req: any) {
+  async createRoom(body: RoomDto, idUser: string) {
     const newRoom = await this.prisma.room.create({
       data: {
         type: body.type,
@@ -18,7 +18,7 @@ export class RoomsService {
     });
     const roomUser = await this.prisma.roomUser.create({
       data: {
-        user_id: req.user.id,
+        user_id: idUser,
         room_id: newRoom.id,
         owner: true,
         admin: true,
@@ -32,7 +32,7 @@ export class RoomsService {
     };
   }
 
-  async getAllUserRooms(req: any) {
+  async getAllUserRooms(idUser: string) {
     const getRooms = await this.prisma.room.findMany({
       where: {
         OR: [
@@ -40,7 +40,7 @@ export class RoomsService {
           {
             RoomUser: {
               some: {
-                user_id: req.user.id,
+                user_id: idUser,
               },
             },
             type: 'private',
@@ -123,14 +123,14 @@ export class RoomsService {
     });
   }
 
-  async update(idRoom: string, req: any, body: UpdateRoomDto) {
+  async update(idRoom: string, idUser: string, body: UpdateRoomDto) {
     const updatedRooms = await this.prisma.room.updateMany({
       where: {
         id: idRoom,
         RoomUser: {
           some: {
             owner: true,
-            user_id: req.user.id,
+            user_id: idUser,
           },
         },
       },
@@ -143,10 +143,10 @@ export class RoomsService {
     return updatedRooms;
   }
 
-  async joinRoom(idRoom: string, req: any, password?: string) {
+  async joinRoom(idRoom: string, idUser: string, password?: string) {
     const checkIfBanned = await this.prisma.roomUser.findFirst({
       where: {
-        user_id: req.user.id,
+        user_id: idUser,
         ban: true,
       },
     });
@@ -166,7 +166,7 @@ export class RoomsService {
     }
     const roomUser = await this.prisma.roomUser.create({
       data: {
-        user_id: req.user.id,
+        user_id: idUser,
         room_id: idRoom,
         admin: false,
         ban: false,
@@ -176,11 +176,11 @@ export class RoomsService {
     return roomUser;
   }
 
-  async kickUser(idRoom: string, idUser: string, req: any) {
+  async kickUser(idRoom: string, idUser: string, idAdmin: string) {
     const isAdmin = await this.prisma.roomUser.findFirst({
       where: {
         room_id: idRoom,
-        user_id: req.user.id,
+        user_id: idAdmin,
         admin: true,
       },
     });
@@ -201,12 +201,12 @@ export class RoomsService {
     idRoom: string,
     idUser: string,
     body: RoomUserDto,
-    req: any,
+    idAdmin: string,
   ) {
     const isAdmin = await this.prisma.roomUser.findFirst({
       where: {
         room_id: idRoom,
-        user_id: req.user.id,
+        user_id: idAdmin,
         admin: true,
       },
     });

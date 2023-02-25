@@ -17,7 +17,7 @@ import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { authenticator } from 'otplib';
 import { Jwt2faGuard, JwtGuard } from './guards';
-import { TwoFactDto } from './dto';
+import { TwoFactDto, codeDto } from './dto';
 
 @Controller('auth')
 export class AuthController {
@@ -34,8 +34,9 @@ export class AuthController {
   )
   redirect() {}
 
+  @UsePipes(new ValidationPipe())
   @Get('')
-  async getToken(@Query() obj) {
+  async getToken(@Query() obj: codeDto) {
     const data = await this.authService.fetch_data(obj.code);
     const user = await this.authService.create_user(data);
     return this.authService.signToken(user.id, !!user.tfa);

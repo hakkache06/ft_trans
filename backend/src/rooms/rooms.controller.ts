@@ -14,7 +14,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { JwtGuard } from 'src/auth/guards';
-import { RoomDto, RoomUserDto, UpdateRoomDto } from './dto';
+import { RoomDto, RoomUserDto, RoomWithPwd, UpdateRoomDto } from './dto';
 import { RoomsService } from './rooms.service';
 import { Request } from 'express';
 
@@ -26,13 +26,13 @@ export class RoomsController {
   @Post()
   @UseGuards(JwtGuard)
   async createRoom(@Body() body: RoomDto, @Req() req: Request) {
-    return this.roomsService.createRoom(body, req);
+    return this.roomsService.createRoom(body, req.user.id);
   }
 
   @Get()
   @UseGuards(JwtGuard)
   async getAllUserRooms(@Req() req: Request) {
-    return this.roomsService.getAllUserRooms(req);
+    return this.roomsService.getAllUserRooms(req.user.id);
   }
 
   @Get(':id')
@@ -49,7 +49,7 @@ export class RoomsController {
     @Req() req: Request,
     @Body() body: UpdateRoomDto,
   ) {
-    return this.roomsService.update(idRoom, req, body);
+    return this.roomsService.update(idRoom, req.user.id, body);
   }
 
   @Post(':id/users')
@@ -57,9 +57,9 @@ export class RoomsController {
   async joinRoom(
     @Param('id') idRoom: string,
     @Req() req: Request,
-    @Body() body,
+    @Body() body: RoomWithPwd,
   ) {
-    return this.roomsService.joinRoom(idRoom, req, body?.password);
+    return this.roomsService.joinRoom(idRoom, req.user.id, body?.password);
   }
 
   @Delete(':id/users/:user_id')
@@ -69,7 +69,7 @@ export class RoomsController {
     @Param('user_id') idUser: string,
     @Req() req: Request,
   ) {
-    return this.roomsService.kickUser(idRoom, idUser, req);
+    return this.roomsService.kickUser(idRoom, idUser, req.user.id);
   }
 
   @UsePipes(new ValidationPipe())
@@ -81,6 +81,6 @@ export class RoomsController {
     @Body() body: RoomUserDto,
     @Req() req: Request,
   ) {
-    return this.roomsService.updateUser(idRoom, idUser, body, req);
+    return this.roomsService.updateUser(idRoom, idUser, body, req.user.id);
   }
 }

@@ -125,4 +125,13 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log(`User ${idUser} left room : ${payload.room}`);
     client.leave(payload.room);
   }
+
+  @SubscribeMessage('game:join')
+  async joinGame(
+    @MessageBody() payload: any,
+    @ConnectedSocket() client: Socket,
+  ) {
+    
+  }
+
 }

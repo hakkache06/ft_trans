@@ -87,6 +87,7 @@ export class AuthService {
       access_token: token,
     };
   }
+  
   async generate_2f_auth(user: any) {
     const secret = authenticator.generateSecret();
     const otpauthUrl = authenticator.keyuri(
