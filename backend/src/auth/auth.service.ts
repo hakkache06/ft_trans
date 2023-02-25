@@ -64,6 +64,7 @@ export class AuthService {
         avatar: userDto.avatar,
       },
     });
+
     return upsertUser;
   }
 

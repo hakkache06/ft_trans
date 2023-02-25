@@ -4,6 +4,9 @@ import {
   WebSocketServer,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  SubscribeMessage,
+  ConnectedSocket,
+  MessageBody,
 } from '@nestjs/websockets';
 import { verify } from 'jsonwebtoken';
 import { Socket, Server } from 'socket.io';
@@ -18,6 +21,13 @@ export class RoomsGateway
 {
   private readonly idUserToSocketIdMap: Map<string, Set<string>> = new Map();
   @WebSocketServer() server: Server;
+
+
+  @SubscribeMessage('message')
+  handleEvent(@MessageBody() data: string, @ConnectedSocket() client: Socket) {
+    this.server.to('room1').emit('message', client.id, data);
+  }
+
 
   afterInit(server: Server) {}
 
