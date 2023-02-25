@@ -9,9 +9,9 @@ import { FriendsModule } from './friends/friends.module';
 import { GammesModule } from './gammes/gammes.module';
 import { MessagesModule } from './messages/messages.module';
 import { TestController } from './test/test.controller';
-import { RoomsGateway } from './rooms/rooms.gateway';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { SharedModule } from './shared/shared.module';
 
 @Module({
   imports: [
@@ -30,8 +30,9 @@ import { join } from 'path';
     FriendsModule,
     GammesModule,
     MessagesModule,
+    SharedModule,
   ],
   controllers: [TestController],
-  providers: [RoomsGateway],
+  providers: [],
 })
 export class AppModule {}

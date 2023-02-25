@@ -2,14 +2,10 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { RoomDto, RoomUserDto, UpdateRoomDto } from './dto';
 import { PrismaService } from '../prisma/prisma.service';
 import * as argon from 'argon2';
-import { RoomsGateway } from './rooms.gateway';
 
 @Injectable()
 export class RoomsService {
-  constructor(
-    private prisma: PrismaService,
-    private roomsGateway: RoomsGateway,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   async createRoom(body: RoomDto, req: any) {
     const newRoom = await this.prisma.room.create({
@@ -52,8 +48,8 @@ export class RoomsService {
         ],
       },
       select: {
-        name: true,
         id: true,
+        name: true,
         type: true,
         RoomUser: {
           select: {
@@ -75,18 +71,56 @@ export class RoomsService {
     return getRooms;
   }
 
-  async getOneRoom(idRoom: string) {
-    try {
-      const room = await this.prisma.room.findUnique({
-        where: {
-          id: idRoom,
+  async getOneRoom(room_id: string, user_id: string) {
+    const room = await this.prisma.room.findUnique({
+      where: {
+        id: room_id,
+      },
+      select: {
+        password: true,
+        RoomUser: {
+          where: {
+            user_id,
+            ban: false,
+          },
         },
-      });
-      if (!room) throw 'Room not found';
-      return room;
-    } catch (e) {
-      return e;
-    }
+      },
+    });
+    if (!room) throw new HttpException('Room not found', 404);
+    if (room.RoomUser.length === 0)
+      throw new HttpException(
+        {
+          message: 'You are not in this room',
+          password: !!room.password,
+        },
+        403,
+      );
+    return this.prisma.room.findUnique({
+      where: {
+        id: room_id,
+      },
+      select: {
+        RoomUser: {
+          select: {
+            user: {
+              select: {
+                avatar: true,
+              },
+            },
+            admin: true,
+            mute: true,
+          },
+          where: {
+            ban: false,
+          },
+        },
+        id: true,
+        name: true,
+        password: true,
+        id_user_owner: true,
+        type: true,
+      },
+    });
   }
 
   async update(idRoom: string, req: any, body: UpdateRoomDto) {
@@ -124,14 +158,27 @@ export class RoomsService {
     }
   }
 
-  async joinRoom(idRoom: string, req: any) {
-    const checkIfBanned = await this.prisma.roomUser.findMany({
+  async joinRoom(idRoom: string, req: any, password?: string) {
+    const checkIfBanned = await this.prisma.roomUser.findFirst({
       where: {
         user_id: req.user.id,
         ban: true,
       },
     });
-    if (checkIfBanned) throw new HttpException('User Banned', 401);
+    if (checkIfBanned) throw new HttpException('User Banned', 403);
+    const room = await this.prisma.room.findUnique({
+      where: {
+        id: idRoom,
+      },
+      select: {
+        password: true,
+      },
+    });
+    if (room.password) {
+      if (!password) throw new HttpException('Password required', 403);
+      const checkPassword = await argon.verify(room.password, password);
+      if (!checkPassword) throw new HttpException('Wrong password', 403);
+    }
     const roomUser = await this.prisma.roomUser.create({
       data: {
         user_id: req.user.id,
