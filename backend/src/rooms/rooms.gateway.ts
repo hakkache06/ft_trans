@@ -1,17 +1,12 @@
-import { UseGuards } from '@nestjs/common';
 import {
-  SubscribeMessage,
   WebSocketGateway,
   OnGatewayInit,
   WebSocketServer,
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
-
+import { verify } from 'jsonwebtoken';
 import { Socket, Server } from 'socket.io';
-import { JwtGuard } from 'src/auth/guards';
-// import { AppService } from './app.service';
-// import { Chat } from './chat.entity';
 
 @WebSocketGateway({
   cors: {
@@ -21,60 +16,53 @@ import { JwtGuard } from 'src/auth/guards';
 export class RoomsGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
-  private readonly idUserToSocketIdMap: Map<string, string[]> = new Map();
+  private readonly idUserToSocketIdMap: Map<string, Set<string>> = new Map();
   @WebSocketServer() server: Server;
-
-  @SubscribeMessage('sendMessage')
-  async handleSendMessage(client: Socket, payload: any): Promise<void> {}
 
   afterInit(server: Server) {}
 
   handleDisconnect(client: Socket) {
     console.log(`Disconnected: ${client.id}`);
 
-    const idUser = Object.keys(this.idUserToSocketIdMap).find((id) =>
-      this.idUserToSocketIdMap.get(id).includes(client.id),
-    );
+    const idUser = [...this.idUserToSocketIdMap.keys()].find((id) => {
+      console.log(id, client.id, this.idUserToSocketIdMap.get(id));
+      return this.idUserToSocketIdMap.get(id).has(client.id);
+    });
 
-    this.idUserToSocketIdMap.set(
-      idUser,
-      this.idUserToSocketIdMap.get(idUser).filter((id) => id === client.id),
-    );
-    if (this.idUserToSocketIdMap.get(idUser).length === 0)
-      this.idUserToSocketIdMap.delete(idUser)
-      this.server.emit(
-        'disconnectedUsers',
-        Object.keys(this.idUserToSocketIdMap),
-      );
+    console.log(`User disconnected ${idUser}`);
+    if (!idUser) return;
+
+    this.idUserToSocketIdMap.get(idUser).delete(client.id);
+    if (this.idUserToSocketIdMap.get(idUser).size === 0)
+      this.idUserToSocketIdMap.delete(idUser);
+    this.emitOnlineUsers();
+  }
+
+  emitOnlineUsers() {
+    console.log('Emitting online users', [
+      ...this.idUserToSocketIdMap.values(),
+    ]);
+    this.server.emit('users:online', [...this.idUserToSocketIdMap.keys()]);
   }
 
   handleConnection(client: Socket, ...args: any[]) {
     console.log(`Connected ${client.id}`);
-    const idUser = () => {
-      const token: string = String(client.handshake.query.token);
-      const decodedToken = JSON.parse(
-        Buffer.from(token.split('.')[1], 'base64').toString(),
+    try {
+      const { id } = verify(
+        client.handshake.auth.token,
+        process.env.JWT_SECRET,
+      ) as { id: string };
+      console.log(`User connected ${id}`);
+      const socket_ids = new Set<string>(
+        this.idUserToSocketIdMap.get(id) || [],
       );
-      return decodedToken.id;
-    };
-    const socket_ids = this.idUserToSocketIdMap[String(idUser)] || [];
-    this.idUserToSocketIdMap.set(String(idUser), [...socket_ids, client.id]);
-    Object.keys(this.idUserToSocketIdMap);
-    this.server.emit('connectedUsers', Object.keys(this.idUserToSocketIdMap));
-
-    // let connected_ids: Array<> = []
-    // for (let key in this.idUserToSocketIdMap)
-    // {
-    //   if (this.idUserToSocketIdMap[key].length() > 0)
-    //     connected_ids.append()
-
-    // }
-    // const socketInstance = await(async () => {
-    //   const sockets = await this.server.fetchSockets();
-    //   for (let socket of sockets)
-    //     if (this.idUserToSocketIdMap[idUser].includes(socket.id))
-    //       return this.idUserToSocketIdMap[idUser].find(socket.id);
-    // })();
+      socket_ids.add(client.id);
+      this.idUserToSocketIdMap.set(id, socket_ids);
+      this.emitOnlineUsers();
+    } catch (err) {
+      console.error('Invalid token', err);
+      return client.disconnect();
+    }
   }
 
   async joinRoom(idUser: string, idRoom: number) {

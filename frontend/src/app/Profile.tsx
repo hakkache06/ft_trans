@@ -3,7 +3,6 @@ import {
   Group,
   Text,
   Button,
-  Loader,
   CopyButton,
   Input,
   SimpleGrid,
@@ -15,13 +14,8 @@ import { IconUpload } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import PinField from "react-pin-field";
+import { Loading } from "../components/Loading";
 import { api } from "../utils";
-
-const Loading = () => (
-  <div className="flex justify-center items-center h-full">
-    <Loader variant="dots" />
-  </div>
-);
 
 function EnableTfa({ reload }: { reload: () => void }) {
   const [qr, setQr] = useState<string>();
@@ -96,13 +90,11 @@ function EnableTfa({ reload }: { reload: () => void }) {
   );
 }
 
-function Profile() {
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>();
+function EditProfile({ user }: { user: any }) {
   const form = useForm({
     initialValues: {
-      avatar: "",
-      name: user?.name,
+      avatar: undefined,
+      name: user.name,
     },
     validate: {
       name: (value) =>
@@ -111,6 +103,67 @@ function Profile() {
           : null,
     },
   });
+
+  const onSubmit = (values: typeof form.values) => {
+    toast.promise(
+      (values.avatar
+        ? api
+            .post("user/upload", {
+              body: (() => {
+                const f = new FormData();
+                f.append("image", values.avatar);
+                return f;
+              })(),
+            })
+            .json<any>()
+            .then((d) => ({
+              ...values,
+              avatar: d.url,
+            }))
+        : Promise.resolve(values)
+      ).then((values) =>
+        api
+          .patch("user/profile", {
+            json: values,
+          })
+          .then(() => {
+            window.location.reload();
+          })
+      ),
+      {
+        loading: "Saving...",
+        success: <b>Saved successfully!</b>,
+        error: <b>Saving failed</b>,
+      }
+    );
+  };
+
+  return (
+    <form onSubmit={form.onSubmit(onSubmit)}>
+      <FileInput
+        label="Your avatar"
+        placeholder="Select an image"
+        accept="image/png,image/jpeg"
+        icon={<IconUpload size={14} />}
+        {...form.getInputProps("avatar")}
+      />
+      <TextInput
+        mt="md"
+        withAsterisk
+        label="Display name"
+        placeholder="Enter a name"
+        {...form.getInputProps("name")}
+      />
+      <Group position="right" mt="md">
+        <Button type="submit">Save</Button>
+      </Group>
+    </form>
+  );
+}
+
+function Profile() {
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>();
 
   const load = () => {
     setLoading(true);
@@ -178,25 +231,7 @@ function Profile() {
             </Group>
           </Card.Section>
           <Card.Section py="md" inheritPadding>
-            <form onSubmit={form.onSubmit((values) => console.log(values))}>
-              <FileInput
-                label="Your avatar"
-                placeholder="Select an image"
-                accept="image/png,image/jpeg"
-                icon={<IconUpload size={14} />}
-                {...form.getInputProps("avatar")}
-              />
-              <TextInput
-                mt="md"
-                withAsterisk
-                label="Display name"
-                placeholder="Enter a name"
-                {...form.getInputProps("name")}
-              />
-              <Group position="right" mt="md">
-                <Button type="submit">Save</Button>
-              </Group>
-            </form>
+            <EditProfile user={user} />
           </Card.Section>
         </Card>
       </SimpleGrid>

@@ -1,25 +1,23 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   Param,
   Patch,
   Post,
   Req,
-  Res,
   UploadedFile,
-  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 import { UserService } from './user.service';
 import { diskStorage, MulterError } from 'multer';
 import { extname } from 'path';
 import { JwtGuard } from 'src/auth/guards';
+import { UpdateUserDto } from './dto/update.dto';
 
 @Controller('user')
 export class UserController {
@@ -42,16 +40,10 @@ export class UserController {
     return this.userService.getOneUser(idUser);
   }
   //updateUser by Id
-  @Patch(':id')
+  @Patch('profile')
   @UseGuards(JwtGuard)
-  updateUserbyId(@Param('id') idUser: string, @Body() b) {
-    return this.userService.updateUserbyId(idUser, b);
-  }
-  //deleteUser By Id
-  @Delete(':id')
-  @UseGuards(JwtGuard)
-  deleteUserbyId(@Param('id') idUser: string) {
-    return this.userService.deleteUserbyId(idUser);
+  updateUserbyId(@Req() req: Request, @Body() b: UpdateUserDto) {
+    return this.userService.updateUserbyId(req.user.id, b);
   }
   @Post('upload')
   @UseGuards(JwtGuard)
@@ -73,9 +65,9 @@ export class UserController {
           callback(null, filename);
         },
       }),
-    }) ,
+    }),
   )
   uploadFile(@UploadedFile() file: Express.Multer.File) {
-    return file;
+    return { url: process.env.FILES_URL + file.filename };
   }
 }

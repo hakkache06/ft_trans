@@ -1,10 +1,11 @@
 import jwtDecode from "jwt-decode";
-import React from "react";
+import React, { createContext } from "react";
 import { useLocation } from "react-router-dom";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import ky from "ky";
 import { router } from "./main";
+import { Socket } from "socket.io-client";
 
 export function useQuery() {
   const { search } = useLocation();
@@ -60,3 +61,5 @@ export const api = ky.extend({
     ],
   },
 });
+
+export const SocketContext = createContext<Socket | undefined>(undefined);

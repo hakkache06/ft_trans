@@ -43,14 +43,14 @@ export class RoomsService {
     const getRooms = await this.prisma.room.findMany({
       where: {
         OR: [
-          {OR: [{type: 'protected'}, {type: 'public'}],},
+          { OR: [{ type: 'protected' }, { type: 'public' }] },
           {
             RoomUser: {
               some: {
                 user_id: req.user.id,
               },
             },
-            type: 'private'
+            type: 'private',
           },
         ],
       },

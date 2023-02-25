@@ -9,13 +9,18 @@ import { FriendsModule } from './friends/friends.module';
 import { GammesModule } from './gammes/gammes.module';
 import { MessagesModule } from './messages/messages.module';
 import { TestController } from './test/test.controller';
-import { MulterModule } from '@nestjs/platform-express';
 import { RoomsGateway } from './rooms/rooms.gateway';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'files'),
+      serveRoot: '/files',
     }),
     AuthModule,
     UserModule,
