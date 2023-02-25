@@ -10,6 +10,8 @@ import {
 } from '@nestjs/websockets';
 import { verify } from 'jsonwebtoken';
 import { Socket, Server } from 'socket.io';
+import { MessagesService } from 'src/messages/messages.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @WebSocketGateway({
   cors: {
@@ -21,11 +23,29 @@ export class RoomsGateway
 {
   private readonly idUserToSocketIdMap: Map<string, Set<string>> = new Map();
   @WebSocketServer() server: Server;
+  constructor(private prisma : PrismaService) {}
 
+  @SubscribeMessage('postMessage')
+  handleEvent(@MessageBody() payload: any, @ConnectedSocket() client: Socket) {
+    this.server
+      .to(payload.room)
+      .emit('postMessage', client.id, payload.data);
+       const idUser = this.fetchUser(client.id);
+      const messages = this.prisma.message.create({
+        data: {
+          content: payload.data,
+          from_id: idUser,
+          room_id: payload.room,
+        },
+      });
+  }
 
-  @SubscribeMessage('message')
-  handleEvent(@MessageBody() data: string, @ConnectedSocket() client: Socket) {
-    this.server.to('room1').emit('message', client.id, data);
+  fetchUser(idClient) {
+    const idUser = [...this.idUserToSocketIdMap.keys()].find((id) => {
+      console.log(id, idClient, this.idUserToSocketIdMap.get(id));
+      return this.idUserToSocketIdMap.get(id).has(idClient);
+    });
+    return idUser;
   }
 
 
@@ -34,10 +54,7 @@ export class RoomsGateway
   handleDisconnect(client: Socket) {
     console.log(`Disconnected: ${client.id}`);
 
-    const idUser = [...this.idUserToSocketIdMap.keys()].find((id) => {
-      console.log(id, client.id, this.idUserToSocketIdMap.get(id));
-      return this.idUserToSocketIdMap.get(id).has(client.id);
-    });
+    const idUser = this.fetchUser(client.id);
 
     console.log(`User disconnected ${idUser}`);
     if (!idUser) return;
@@ -102,4 +119,6 @@ export class RoomsGateway
       content,
     });
   }
+
+
 }
