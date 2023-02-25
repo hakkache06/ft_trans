@@ -23,21 +23,20 @@ export class RoomsGateway
 {
   private readonly idUserToSocketIdMap: Map<string, Set<string>> = new Map();
   @WebSocketServer() server: Server;
-  constructor(private prisma : PrismaService) {}
+  constructor(private prisma: PrismaService) {}
 
   @SubscribeMessage('postMessage')
   handleEvent(@MessageBody() payload: any, @ConnectedSocket() client: Socket) {
-    this.server
-      .to(payload.room)
-      .emit('postMessage', client.id, payload.data);
-       const idUser = this.fetchUser(client.id);
-      const messages = this.prisma.message.create({
-        data: {
-          content: payload.data,
-          from_id: idUser,
-          room_id: payload.room,
-        },
-      });
+    this.server.to(payload.room).emit('postMessage', client.id, payload.data);
+    const idUser = this.fetchUser(client.id);
+    if (!idUser) return;
+    const messages = this.prisma.message.create({
+      data: {
+        content: payload.data,
+        from_id: idUser,
+        room_id: payload.room,
+      },
+    });
   }
 
   fetchUser(idClient) {
@@ -47,7 +46,6 @@ export class RoomsGateway
     });
     return idUser;
   }
-
 
   afterInit(server: Server) {}
 
@@ -111,14 +109,5 @@ export class RoomsGateway
     })();
     socketInstance.leave(String(idRoom));
   }
-
-  async sendMsg(idUser: number, idRoom: string, content: string) {
-    this.server.to(String(idRoom)).emit('sendMsg', {
-      sender: idUser,
-      room: idRoom,
-      content,
-    });
-  }
-
 
 }
