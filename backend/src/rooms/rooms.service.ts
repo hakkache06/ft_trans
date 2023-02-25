@@ -76,7 +76,6 @@ export class RoomsService {
   }
 
   async getOneRoom(idRoom: string) {
-    try {
       const room = await this.prisma.room.findUnique({
         where: {
           id: idRoom,
@@ -84,9 +83,6 @@ export class RoomsService {
       });
       if (!room) throw 'Room not found';
       return room;
-    } catch (e) {
-      return e;
-    }
   }
 
   async update(idRoom: string, req: any, body: UpdateRoomDto) {
@@ -105,7 +101,6 @@ export class RoomsService {
   }
 
   async deleteRoom(idRoom: string, req: any) {
-    try {
       const room = await this.prisma.room.findUnique({
         where: {
           id: idRoom,
@@ -118,10 +113,7 @@ export class RoomsService {
             id: idRoom,
           },
         });
-      } else throw 'Not the right user';
-    } catch (e) {
-      return e;
-    }
+      } else new HttpException("User is not the owner to delete the room", 403) ;
   }
 
   async joinRoom(idRoom: string, req: any) {
