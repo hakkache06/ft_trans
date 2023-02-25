@@ -60,15 +60,15 @@ enum RoomType {
 }
 
 model Room {
-  id            String     @id @default(uuid())
-  name          String
-  password      String?
-  type          RoomType   @default(public)
-  user          User       @relation(fields: [id_user_owner], references: [id], onDelete: Cascade)
-  id_user_owner String
-  created_at    DateTime   @default(now())
-  RoomUser      RoomUser[]
-  Message       Message[]
+  id         String     @id @default(uuid())
+  name       String
+  password   String?
+  type       RoomType   @default(public)
+  created_at DateTime   @default(now())
+  RoomUser   RoomUser[]
+  Message    Message[]
+  User       User?      @relation(fields: [userId], references: [id])
+  userId     String?
 }
 
 model RoomUser {
@@ -76,8 +76,9 @@ model RoomUser {
   user_id    String
   room       Room      @relation(fields: [room_id], references: [id], onDelete: Cascade)
   room_id    String
-  admin      Boolean
-  ban        Boolean
+  owner      Boolean   @default(false)
+  admin      Boolean   @default(false)
+  ban        Boolean   @default(false)
   mute       DateTime?
   created_at DateTime  @default(now())
 
