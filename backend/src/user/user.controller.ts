@@ -5,6 +5,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UploadedFile,
   UseGuards,
@@ -25,8 +26,8 @@ export class UserController {
   //fetch All_user
   @Get()
   @UseGuards(JwtGuard)
-  fetchAlluser() {
-    return this.userService.fetchAlluser();
+  fetchAlluser(@Query('search') search: string) {
+    return this.userService.fetchAlluser(search);
   }
   @Get('profile')
   @UseGuards(JwtGuard)

@@ -9,9 +9,15 @@ export class UserService {
   constructor(private prisma: PrismaService) {}
 
   //Fetch user By name (?)
-  async fetchAlluser() {
+  async fetchAlluser(search: string) {
     try {
-      const fetch = await this.prisma.user.findMany({});
+      const fetch = await this.prisma.user.findMany({
+          where: {
+            name: {
+              contains: search,
+            }
+          }
+      });
       if (fetch) return fetch;
       else return { meassgae: `Error fetchAlluser` };
     } catch (e) {

@@ -20,7 +20,6 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly idUserToSocketIdMap: Map<string, Set<string>> = new Map();
   private players: Socket[] = [];
-  private watchers: Socket[] = [];
 
   @WebSocketServer() server: Server;
   constructor(private prisma: PrismaService) {}
@@ -151,10 +150,9 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: any,
     @ConnectedSocket() client: Socket,
   ) {
-    if (this.players.length < 2) {
-      this.players.push(client);
-    } else {
-      if (this.players.every((p) => p.connected)) {
+    this.players.push(client);
+    if (this.players.length >= 2) {
+      // if (this.players.every((p) => p.connected)) {
         this.players[0].data.role = 'player';
         this.players[1].data.role = 'player';
         const user1 = this.fetchUser(this.players[0].id);
@@ -164,10 +162,10 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
           player2: user2,
         });
         this.startGame();
-      } else {
-        return 'User not connected';
+      // } else {
+      //   return 'User not connected';
+    // }
       }
-    }
   }
 
   @SubscribeMessage('game:invite')
@@ -175,7 +173,7 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: any,
     @ConnectedSocket() client: Socket,
   ) {
-    if (this.players.every((p) => p.connected)) {
+    // if (this.players.every((p) => p.connected)) {
       this.players.push(client);
       this.players.push(payload.opponent);
       this.players[0].data.role = 'player';
@@ -187,7 +185,7 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         player2: user2,
       });
       this.startGame();
-    }
+    // }
   }
 
   async startGame() {
@@ -204,8 +202,8 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.players[0].join(game_room.id);
     this.players[1].join(game_room.id);
 
-    this.players.pop();
-    this.players.pop();
+    this.players.shift();
+    this.players.shift();
   }
 
   @SubscribeMessage('game:move')
@@ -218,8 +216,7 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('game:score')
   async score(@MessageBody() payload: any, @ConnectedSocket() client: Socket) {
     const user = this.fetchUser(client.id);
-    if (client.data.role == 'player')
-      this.server.to(payload.room).emit('scored', { player: user });
+    this.server.to(payload.room).emit('scored', { player: user });
   }
 
   @SubscribeMessage('game:join')
@@ -233,15 +230,11 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.join(payload.room_id);
   }
 
-  @SubscribeMessage('game:endGame')
-  async endGame(
-    @MessageBody() payload: any,
-    @ConnectedSocket() client: Socket,
-  ) {
-    const socketsInMyRoom = this.server.sockets.adapter.rooms[payload.room_id];
+  async endGame(room_id: string) {
+    const socketsInMyRoom = this.server.sockets.adapter.rooms[room_id];
     if (socketsInMyRoom) {
       socketsInMyRoom.forEach((socketId: Socket) => {
-        socketId.leave(payload.room_id);
+        socketId.leave(room_id);
       });
     }
   }

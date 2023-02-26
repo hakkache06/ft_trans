@@ -12,6 +12,7 @@ import { TestController } from './test/test.controller';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { SharedModule } from './shared/shared.module';
+import { BlocklistModule } from './blocklist/blocklist.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { SharedModule } from './shared/shared.module';
     GamesModule,
     MessagesModule,
     SharedModule,
+    BlocklistModule,
   ],
   controllers: [TestController],
   providers: [],
