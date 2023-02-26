@@ -1,27 +1,52 @@
 import {
   ActionIcon,
   Avatar,
+  Badge,
+  Box,
   Button,
+  Center,
+  Drawer,
+  Group,
   Loader,
+  MantineNumberSize,
+  Menu,
+  Modal,
   PasswordInput,
   ScrollArea,
-  Textarea,
+  SegmentedControl,
+  Text,
   TextInput,
+  useMantineTheme,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import {
+  IconBan,
+  IconCheck,
+  IconCrown,
+  IconCrownOff,
+  IconDeviceGamepad2,
+  IconDoorExit,
   IconEyeCheck,
   IconEyeOff,
-  IconInfoSquareRounded,
+  IconFriends,
+  IconHandStop,
+  IconListDetails,
+  IconMessagePlus,
   IconSend,
+  IconSettings,
+  IconUserCircle,
+  IconUserOff,
   IconUserPlus,
+  IconVolume,
+  IconVolumeOff,
 } from "@tabler/icons-react";
-import { format } from "date-fns";
+import { addMinutes, format } from "date-fns";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Loading } from "../components/Loading";
-import { api, SocketContext } from "../utils";
+import { types } from "../shared";
+import { api, SocketContext, useAuth } from "../utils";
 
 export function Welcome() {
   return (
@@ -32,37 +57,105 @@ export function Welcome() {
   );
 }
 
-interface Message {
-  id: 2;
-  content: string;
-  created_at: string;
-  room_id: string;
-  from_id: string;
-  user: {
-    avatar: string;
-    name: string;
-    id: string;
+function EditRoom({ room }: { room: Room }) {
+  const [opened, setOpened] = useState(false);
+  const form = useForm({
+    initialValues: {
+      name: room.name,
+      type: room.type,
+      password: "",
+    },
+    validate: {
+      name: (value) => (!value ? "Room name is required" : null),
+      password: (value, v) =>
+        v.type == "protected" && (!value || value.length < 8)
+          ? "Password must be at least 8 characters"
+          : null,
+    },
+  });
+
+  const onSubmit = (values: typeof form.values) => {
+    toast.promise(
+      api
+        .put(`rooms/${room.id}`, {
+          json: values,
+        })
+        .then(() => {
+          setOpened(false);
+        }),
+      {
+        loading: "Updating...",
+        success: <b>Updated successfully!</b>,
+        error: <b>Updating failed</b>,
+      }
+    );
   };
+
+  return (
+    <>
+      <Modal
+        opened={opened}
+        onClose={() => setOpened(false)}
+        title="Update room"
+        centered
+        overlayBlur={3}
+      >
+        <form onSubmit={form.onSubmit(onSubmit)}>
+          <TextInput
+            withAsterisk
+            label="Room name"
+            placeholder="Enter a name"
+            {...form.getInputProps("name")}
+          />
+          {form.values["type"] === "protected" && (
+            <PasswordInput
+              {...form.getInputProps("password")}
+              mt="md"
+              withAsterisk
+              label="Room password"
+              placeholder="Protect your room with a password"
+              visibilityToggleIcon={({ reveal, size }) =>
+                reveal ? (
+                  <IconEyeOff size={size} />
+                ) : (
+                  <IconEyeCheck size={size} />
+                )
+              }
+            />
+          )}
+          <SegmentedControl
+            mt="md"
+            {...form.getInputProps("type")}
+            data={Object.entries(types).map(([value, { label, icon }]) => ({
+              value,
+              label: (
+                <Center>
+                  {icon}
+                  <Box ml={10}>{label}</Box>
+                </Center>
+              ),
+            }))}
+          />
+          <Group mt="md">
+            <Button type="submit">Update room</Button>
+          </Group>
+        </form>
+      </Modal>
+
+      <ActionIcon onClick={() => setOpened(true)} variant="light">
+        <IconSettings size={18} />
+      </ActionIcon>
+    </>
+  );
 }
 
-interface Room {
-  RoomUser: [
-    {
-      user: {
-        avatar: string;
-      };
-      admin: boolean;
-      mute: string | null;
-    }
-  ];
+function Messages({
+  id,
+  currentUser,
+}: {
   id: string;
-  name: string;
-  password: string | null;
-  id_user_owner: string;
-  type: "public" | "private" | "protected";
-}
-
-function Messages({ id }: { id: string }) {
+  currentUser: Room["RoomUser"][0];
+}) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -134,6 +227,12 @@ function Messages({ id }: { id: string }) {
 
   if (loading) return <Loading className="flex-grow" />;
 
+  const mutedUntil = currentUser.mute
+    ? new Date(currentUser.mute) > new Date()
+      ? new Date(currentUser.mute)
+      : null
+    : null;
+
   return (
     <>
       <ScrollArea
@@ -142,14 +241,14 @@ function Messages({ id }: { id: string }) {
           borderBottom: "1px solid #dee2e6",
           borderTop: "1px solid #dee2e6",
         }}
-        className="flex-grow max-h-[calc(100vh-212px)]"
+        className="flex-grow"
       >
         {messages.map((message) => (
           <div
             key={message.id}
             className="p-3 flex gap-3 hover:bg-slate-50 transition-colors"
           >
-            <Avatar src={message.user.avatar} radius="xl" size="md" />
+            <UserAvatar user={message.user} size="md" />
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-bold">{message.user.name}</span>{" "}
@@ -160,24 +259,277 @@ function Messages({ id }: { id: string }) {
           </div>
         ))}
       </ScrollArea>
-      <div className="p-3">
-        <form onSubmit={form.onSubmit(onSubmit)}>
-          <TextInput
-            {...form.getInputProps("message")}
-            placeholder="Type your message..."
-            rightSection={
-              !sending ? (
-                <ActionIcon type="submit">
-                  <IconSend size={18} />
-                </ActionIcon>
-              ) : (
-                <Loader size="xs" />
-              )
-            }
-          />
-        </form>
-      </div>
+      {mutedUntil ? (
+        <div className="p-3">
+          You have been muted by an admin. You can't send messages until{" "}
+          {format(new Date(mutedUntil), "Pp")}
+        </div>
+      ) : (
+        <div className="p-3">
+          <form onSubmit={form.onSubmit(onSubmit)}>
+            <TextInput
+              {...form.getInputProps("message")}
+              placeholder="Type your message..."
+              rightSection={
+                !sending ? (
+                  <ActionIcon type="submit">
+                    <IconSend size={18} />
+                  </ActionIcon>
+                ) : (
+                  <Loader size="xs" />
+                )
+              }
+            />
+          </form>
+        </div>
+      )}
     </>
+  );
+}
+
+function RoomUsers({
+  room,
+  currentUser,
+}: {
+  room: Room;
+  currentUser: Room["RoomUser"][0];
+}) {
+  const [opened, setOpened] = useState(false);
+  const theme = useMantineTheme();
+
+  const kick = (id: string) => {
+    toast.promise(
+      api.delete(`rooms/${room.id}/users/${id}`, { json: { user_id: id } }),
+      {
+        loading: "Kicking user...",
+        success: "User kicked",
+        error: "Failed to kick user",
+      }
+    );
+  };
+
+  const mute = (id: string, minutes: number = 0) => {
+    toast.promise(
+      api.patch(`rooms/${room.id}/users/${id}`, {
+        json: {
+          mute: minutes ? addMinutes(new Date(), minutes).toISOString() : null,
+        },
+      }),
+      {
+        loading: "Muting user...",
+        success: minutes ? "User muted" : "User unmuted",
+        error: "Failed to mute user",
+      }
+    );
+  };
+
+  const toggleAdmin = (id: string, admin: boolean) => {
+    toast.promise(
+      api.patch(`rooms/${room.id}/users/${id}`, {
+        json: {
+          admin: !admin,
+        },
+      }),
+      {
+        loading: "Updating user...",
+        success: "User updated",
+        error: "Failed to update user",
+      }
+    );
+  };
+
+  const toggleBan = (id: string, banned: boolean) => {
+    toast.promise(
+      api.patch(`rooms/${room.id}/users/${id}`, {
+        json: {
+          ban: !banned,
+        },
+      }),
+      {
+        loading: "Updating user...",
+        success: "User updated",
+        error: "Failed to update user",
+      }
+    );
+  };
+
+  return (
+    <>
+      <Drawer
+        opened={opened}
+        onClose={() => setOpened(false)}
+        overlayBlur={3}
+        title="Room members"
+        padding="xl"
+        size="xl"
+        position="right"
+      >
+        {room.RoomUser.map(({ user, mute: m, admin, owner, ban }) => (
+          <Box
+            key={user.id}
+            sx={{
+              display: "block",
+              width: "100%",
+              padding: theme.spacing.xs,
+              borderRadius: theme.radius.sm,
+              color:
+                theme.colorScheme === "dark"
+                  ? theme.colors.dark[0]
+                  : theme.black,
+
+              "&:hover": {
+                backgroundColor:
+                  theme.colorScheme === "dark"
+                    ? theme.colors.dark[6]
+                    : theme.colors.gray[0],
+              },
+            }}
+          >
+            <Group>
+              <UserAvatar user={user} />
+              <Box sx={{ flex: 1 }}>
+                <Text size="sm" weight={500}>
+                  {user.name}{" "}
+                  {ban ? (
+                    <Badge color="red">Banned</Badge>
+                  ) : owner ? (
+                    <Badge color="teal">Owner</Badge>
+                  ) : admin ? (
+                    <Badge color="yellow">Admin</Badge>
+                  ) : null}
+                </Text>
+              </Box>
+              {currentUser.admin &&
+                currentUser.user.id != user.id &&
+                !owner && (
+                  <div className="flex gap-2">
+                    {currentUser.admin && (
+                      <ActionIcon
+                        variant="light"
+                        onClick={() => toggleAdmin(user.id, admin)}
+                      >
+                        {admin ? (
+                          <IconCrownOff size={18} />
+                        ) : (
+                          <IconCrown size={18} />
+                        )}
+                      </ActionIcon>
+                    )}
+                    {m ? (
+                      <ActionIcon
+                        onClick={() => mute(user.id, 0)}
+                        variant="light"
+                      >
+                        <IconVolume size={18} />
+                      </ActionIcon>
+                    ) : (
+                      <Menu shadow="md" width={200}>
+                        <Menu.Target>
+                          <ActionIcon variant="light">
+                            <IconVolumeOff size={18} />
+                          </ActionIcon>
+                        </Menu.Target>
+
+                        <Menu.Dropdown>
+                          <Menu.Item onClick={() => mute(user.id, 15)}>
+                            15 Minutes
+                          </Menu.Item>
+                          <Menu.Item onClick={() => mute(user.id, 30)}>
+                            30 Minutes
+                          </Menu.Item>
+                          <Menu.Item onClick={() => mute(user.id, 60)}>
+                            1 Hour
+                          </Menu.Item>
+                          <Menu.Item onClick={() => mute(user.id, 60 * 24)}>
+                            1 Day
+                          </Menu.Item>
+                          <Menu.Item onClick={() => mute(user.id, 60 * 24 * 7)}>
+                            1 Week
+                          </Menu.Item>
+                        </Menu.Dropdown>
+                      </Menu>
+                    )}
+                    <ActionIcon onClick={() => kick(user.id)} variant="light">
+                      <IconUserOff size={18} />
+                    </ActionIcon>
+                    <ActionIcon
+                      onClick={() => toggleBan(user.id, ban)}
+                      variant="light"
+                      color={ban ? "green" : "red"}
+                    >
+                      {ban ? <IconCheck size={18} /> : <IconBan size={18} />}
+                    </ActionIcon>
+                  </div>
+                )}
+            </Group>
+          </Box>
+        ))}
+      </Drawer>
+
+      <ActionIcon onClick={() => setOpened(true)} variant="light">
+        <IconListDetails size={18} />
+      </ActionIcon>
+    </>
+  );
+}
+
+function UserAvatar({
+  user,
+  size,
+}: {
+  user: Room["RoomUser"][0]["user"];
+  size?: MantineNumberSize;
+}) {
+  const auth = useAuth();
+  const navigate = useNavigate();
+
+  const dm = () => {
+    toast.promise(
+      api
+        .post(`rooms/dm/${user.id}`)
+        .json<{ id: string }>()
+        .then(({ id }) => {
+          navigate(`/chat/${id}`);
+        }),
+      {
+        loading: "Retrieving direct messages...",
+        success: "Direct messages retrieved",
+        error: "Failed to retrieve direct messages",
+      }
+    );
+  };
+
+  return (
+    <Menu shadow="md" withArrow>
+      <Menu.Target>
+        <Avatar
+          sx={{
+            cursor: "pointer",
+          }}
+          src={user.avatar}
+          radius="xl"
+          size={size || "sm"}
+        />
+      </Menu.Target>
+
+      <Menu.Dropdown>
+        <Link to={`/users/${user.id}`}>
+          <Menu.Item icon={<IconUserCircle size={14} />}>Profile</Menu.Item>
+        </Link>
+        {user.id !== auth.id && (
+          <>
+            <Menu.Item icon={<IconFriends size={14} />}>Add friend</Menu.Item>
+            <Menu.Item onClick={dm} icon={<IconMessagePlus size={14} />}>
+              Private message
+            </Menu.Item>
+            <Menu.Item icon={<IconDeviceGamepad2 size={14} />}>
+              Invite to game
+            </Menu.Item>
+            <Menu.Item icon={<IconHandStop size={14} />}>Block user</Menu.Item>
+          </>
+        )}
+      </Menu.Dropdown>
+    </Menu>
   );
 }
 
@@ -187,6 +539,8 @@ function Room() {
   const [room, setRoom] = useState<Room>();
   const [passwordRequired, setPasswordRequired] = useState(false);
   const navigate = useNavigate();
+  const socket = useContext(SocketContext);
+  const { id: user_id } = useAuth();
   const form = useForm({
     initialValues: {
       password: "",
@@ -211,7 +565,7 @@ function Room() {
     );
   };
 
-  const loadRoom = () => {
+  const loadRoom = useCallback(() => {
     setLoading(true);
     setRoom(undefined);
     api
@@ -231,10 +585,32 @@ function Room() {
       .finally(() => {
         setLoading(false);
       });
+  }, [id]);
+
+  const leave = () => {
+    toast.promise(
+      api
+        .delete(`rooms/${id}/users`)
+        .then(() => {
+          navigate("/chat");
+        })
+        .catch(async (e) => {
+          throw (await e.response.json()).message;
+        }),
+      {
+        loading: "Leaving...",
+        success: <b>Left successfully!</b>,
+        error: (e) => <b>{e}</b>,
+      }
+    );
   };
 
   useEffect(() => {
     loadRoom();
+    socket?.on("room:updated", loadRoom);
+    return () => {
+      socket?.off("room:updated", loadRoom);
+    };
   }, [id]);
 
   if (loading) return <Loading className="w-full !h-auto" />;
@@ -270,15 +646,21 @@ function Room() {
       </div>
     );
 
+  const currentUser = room.RoomUser.find((u) => u.user.id === user_id)!;
+
   return (
     <div className="w-full flex flex-col">
       <div className="w-full p-3 flex justify-between">
         <span className="font-bold text-lg">{room.name}</span>
-        <ActionIcon>
-          <IconInfoSquareRounded size={18} />
-        </ActionIcon>
+        <div className="flex gap-3">
+          {currentUser?.owner && <EditRoom room={room} />}
+          <RoomUsers room={room} currentUser={currentUser} />
+          <ActionIcon onClick={leave} variant="light" color="red">
+            <IconDoorExit size={18} />
+          </ActionIcon>
+        </div>
       </div>
-      <Messages id={room.id} />
+      <Messages id={room.id} currentUser={currentUser} />
     </div>
   );
 }

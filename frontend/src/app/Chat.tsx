@@ -13,34 +13,14 @@ import {
   TextInput,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import {
-  IconEyeCheck,
-  IconEyeOff,
-  IconLock,
-  IconMessagePlus,
-  IconUsers,
-} from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { IconEyeCheck, IconEyeOff, IconMessagePlus } from "@tabler/icons-react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Link, Outlet } from "react-router-dom";
-import { api } from "../utils";
+import { types } from "../shared";
+import { api, SocketContext } from "../utils";
 
-const types = {
-  public: {
-    label: "Public",
-    icon: <IconUsers size={16} />,
-  },
-  protected: {
-    label: "Protected",
-    icon: <IconLock size={16} />,
-  },
-  private: {
-    label: "Private",
-    icon: <IconEyeOff size={16} />,
-  },
-};
-
-function NewRoom({ reload }: { reload: () => void }) {
+function NewRoom() {
   const [opened, setOpened] = useState(false);
   const form = useForm({
     initialValues: {
@@ -64,8 +44,8 @@ function NewRoom({ reload }: { reload: () => void }) {
           json: values,
         })
         .then(() => {
+          form.reset();
           setOpened(false);
-          reload();
         }),
       {
         loading: "Creating...",
@@ -135,22 +115,12 @@ function NewRoom({ reload }: { reload: () => void }) {
   );
 }
 
-interface Room {
-  name: string;
-  id: string;
-  type: keyof typeof types;
-  RoomUser: {
-    user: {
-      avatar: string;
-    };
-  }[];
-}
-
 function Chat() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(false);
+  const socket = useContext(SocketContext);
 
-  const load = () => {
+  const load = useCallback(() => {
     setLoading(true);
     api
       .get("rooms")
@@ -164,17 +134,21 @@ function Chat() {
       .finally(() => {
         setLoading(false);
       });
-  };
+  }, []);
 
   useEffect(() => {
     load();
+    socket?.on("room:updated", load);
+    return () => {
+      socket?.off("room:updated", load);
+    };
   }, []);
 
   return (
     <>
       <div className="flex justify-between items-center mb-4">
         <h1 className="m-0">Chat</h1>
-        <NewRoom reload={load} />
+        <NewRoom />
       </div>
       <Card
         className="flex-grow flex flex-col"
@@ -183,7 +157,7 @@ function Chat() {
         radius="md"
         p={0}
       >
-        <div className="flex flex-grow">
+        <div className="flex flex-grow max-h-[calc(100vh-100px)]">
           <div
             className="min-w-[300px]"
             style={{

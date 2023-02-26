@@ -12,7 +12,7 @@ datasource db {
 
 model User {
   id         String   @id @default(uuid())
-  name       String
+  name       String   @unique
   avatar     String
   tfa        String?
   intra_id   Int      @unique
@@ -21,13 +21,15 @@ model User {
   loses      Int      @default(0)
   created_at DateTime @default(now())
 
-  Friends   Friend[]   @relation("from")
-  Friendsto Friend[]   @relation("to")
-  Game1     Game[]     @relation("playerone")
-  Game2     Game[]     @relation("playertwo")
+  Friends   Friend[]    @relation("from")
+  Friendsto Friend[]    @relation("to")
+  Game1     Game[]      @relation("playerone")
+  Game2     Game[]      @relation("playertwo")
   Room      Room[]
   RoomUser  RoomUser[]
   Message   Message[]
+  Blocked   Blocklist[] @relation("from")
+  Blockers  Blocklist[] @relation("to")
 }
 
 model Friend {
@@ -41,6 +43,16 @@ model Friend {
   @@id([from_id, to_id])
 }
 
+model Blocklist {
+  user1      User?    @relation("from", fields: [from_id], references: [id], onDelete: Cascade)
+  user2      User?    @relation("to", fields: [to_id], references: [id], onDelete: Cascade)
+  from_id    String
+  to_id      String
+  created_at DateTime @default(now())
+
+  @@id([from_id, to_id])
+}
+
 model Game {
   id            String   @id @default(uuid())
   background    String
@@ -48,8 +60,8 @@ model Game {
   player2       User?    @relation("playertwo", fields: [player2_id], references: [id], onDelete: Cascade)
   player1_id    String
   player2_id    String
-  player1_score Int @default(0)
-  player2_score Int @default(0)
+  player1_score Int      @default(0)
+  player2_score Int      @default(0)
   created_at    DateTime @default(now())
 }
 
@@ -94,8 +106,3 @@ model Message {
   user       User     @relation(fields: [from_id], references: [id], onDelete: Cascade)
   from_id    String
 }
-
-//userId int
-// user User @relation(fileds: [userId] , refernces : [id])
-
-// re   res

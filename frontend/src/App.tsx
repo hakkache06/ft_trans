@@ -123,7 +123,6 @@ const Friends = () => {
       setOnline(data);
     });
     return () => {
-      console.log("unmount");
       socket.off("users:online");
     };
   }, [socket]);
@@ -168,8 +167,7 @@ export default function App() {
     return () => {
       if (socket) {
         socket.disconnect();
-        socket.off("connect");
-        socket.off("disconnect");
+        socket.removeAllListeners();
       }
     };
   }, []);

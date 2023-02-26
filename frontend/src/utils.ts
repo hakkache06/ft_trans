@@ -4,7 +4,6 @@ import { useLocation } from "react-router-dom";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import ky from "ky";
-import { router } from "./main";
 import { Socket } from "socket.io-client";
 
 export function useQuery() {
@@ -14,6 +13,7 @@ export function useQuery() {
 }
 
 interface BearState {
+  id: string | null;
   token: string | null;
   tfa_required: boolean;
   login: (token: string) => void;
@@ -23,13 +23,15 @@ interface BearState {
 export const useAuth = create<BearState>()(
   persist(
     (set) => ({
+      id: null,
       token: null,
       tfa_required: false,
-      login: (token: string) =>
-        set({ token, tfa_required: (jwtDecode(token) as any).tfa_required }),
+      login: (token: string) => {
+        const payload = jwtDecode(token) as any;
+        set({ token, tfa_required: payload.tfa_required, id: payload.id });
+      },
       logout: () => {
-        set({ token: null, tfa_required: false });
-        router.navigate("/login");
+        set({ token: null, tfa_required: false, id: null });
       },
     }),
     {

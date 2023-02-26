@@ -1,7 +1,8 @@
-import { Body, Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
 import { PrismaService } from 'src/prisma/prisma.service';
+import { UpdateUserDto } from './dto/update.dto';
 
 @Injectable()
 export class UserService {
@@ -46,19 +47,24 @@ export class UserService {
     }
   }
 
-  async updateUserbyId(idUser: string, b) {
-    try {
-      const fetchByid = await this.prisma.user.update({
+  async updateUserbyId(idUser: string, b: UpdateUserDto) {
+    if (
+      await this.prisma.user.findFirst({
         where: {
-          id: idUser,
+          id: {
+            not: idUser,
+          },
+          name: b.name,
         },
-        data: b,
-      });
-      if (fetchByid) return fetchByid;
-      else return { meassgae: `Error getProfile` };
-    } catch (e) {
-      if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;
-    }
+      })
+    )
+      throw new HttpException('Name already exists', 400);
+    await this.prisma.user.update({
+      where: {
+        id: idUser,
+      },
+      data: b,
+    });
   }
 
   async deleteUserbyId(idUser: string) {

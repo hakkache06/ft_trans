@@ -2,10 +2,79 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { RoomDto, RoomUserDto, UpdateRoomDto } from './dto';
 import { PrismaService } from '../prisma/prisma.service';
 import * as argon from 'argon2';
+import { RoomsGateway } from 'src/shared/rooms.gateway';
 
 @Injectable()
 export class RoomsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private gateway: RoomsGateway) {}
+
+  async dmUser(idUser: string, idUser2: string) {
+    let commonRoom = (
+      await this.prisma.room.findMany({
+        where: {
+          type: 'private',
+          RoomUser: {
+            every: {
+              user_id: {
+                in: [idUser, idUser2],
+              },
+              owner: false,
+              admin: false,
+            },
+          },
+        },
+        select: {
+          id: true,
+          _count: {
+            select: {
+              RoomUser: true,
+            },
+          },
+        },
+      })
+    ).find((room) => room._count.RoomUser === 2);
+    if (!commonRoom) {
+      const names = await this.prisma.user.findMany({
+        where: {
+          id: {
+            in: [idUser, idUser2],
+          },
+        },
+        select: {
+          name: true,
+        },
+      });
+      if (names.length !== 2) throw new HttpException('User not found', 404);
+      commonRoom = await this.prisma.room.create({
+        data: {
+          name: `DM: ` + names.map((name) => name.name).join(' & '),
+          type: 'private',
+          RoomUser: {
+            create: [
+              {
+                user_id: idUser,
+              },
+              {
+                user_id: idUser2,
+              },
+            ],
+          },
+        },
+        select: {
+          id: true,
+          _count: {
+            select: {
+              RoomUser: true,
+            },
+          },
+        },
+      });
+      this.gateway.server.emit('room:updated');
+    }
+    return {
+      id: commonRoom.id,
+    };
+  }
 
   async createRoom(body: RoomDto, idUser: string) {
     const newRoom = await this.prisma.room.create({
@@ -16,7 +85,7 @@ export class RoomsService {
         name: body.name,
       },
     });
-    const roomUser = await this.prisma.roomUser.create({
+    await this.prisma.roomUser.create({
       data: {
         user_id: idUser,
         room_id: newRoom.id,
@@ -26,10 +95,7 @@ export class RoomsService {
         mute: null,
       },
     });
-    return {
-      newRoom,
-      roomUser,
-    };
+    this.gateway.server.emit('room:updated');
   }
 
   async getAllUserRooms(idUser: string) {
@@ -105,14 +171,17 @@ export class RoomsService {
             user: {
               select: {
                 avatar: true,
+                id: true,
+                name: true,
               },
             },
             owner: true,
             admin: true,
             mute: true,
+            ban: true,
           },
-          where: {
-            ban: false,
+          orderBy: {
+            created_at: 'desc',
           },
         },
         id: true,
@@ -135,11 +204,13 @@ export class RoomsService {
         },
       },
       data: {
+        name: body.name,
         type: body.type,
         password:
           body.type === 'protected' ? await argon.hash(body.password) : null,
       },
     });
+    this.gateway.server.emit('room:updated');
     return updatedRooms;
   }
 
@@ -168,53 +239,67 @@ export class RoomsService {
       data: {
         user_id: idUser,
         room_id: idRoom,
+        owner: false,
         admin: false,
         ban: false,
         mute: null,
       },
     });
+    this.gateway.server.emit('room:updated');
     return roomUser;
   }
 
-  async kickUser(idRoom: string, idUser: string, idAdmin: string) {
+  async verifyAdmin(idRoom: string, user_id: any) {
     const isAdmin = await this.prisma.roomUser.findFirst({
       where: {
         room_id: idRoom,
-        user_id: idAdmin,
+        user_id,
         admin: true,
       },
     });
     if (!isAdmin)
       throw new HttpException(
-        'User does not have the right to kick users',
+        'User does not have admin rights in this room',
         403,
       );
-    const roomUser = await this.prisma.roomUser.deleteMany({
-      where: {
-        user_id: idUser,
-        room_id: idRoom,
-      },
-    });
   }
 
-  async updateUser(
-    idRoom: string,
-    idUser: string,
-    body: RoomUserDto,
-    idAdmin: string,
-  ) {
+  async verifyOwner(idRoom: string, user_id: any) {
     const isAdmin = await this.prisma.roomUser.findFirst({
       where: {
         room_id: idRoom,
-        user_id: idAdmin,
-        admin: true,
+        user_id,
+        owner: true,
       },
     });
     if (!isAdmin)
       throw new HttpException(
-        'User does not have the right to ban, mute or set as administrator users',
+        'User does not have owner rights in this room',
         403,
       );
+  }
+
+  async leaveRoom(idRoom: string, idUser: string) {
+    const user = await this.prisma.roomUser.findFirst({
+      where: { room_id: idRoom, user_id: idUser },
+    });
+    if (!user) throw new HttpException('User not found', 404);
+    if (user.owner)
+      throw new HttpException('User is the owner of the room', 403);
+    if (user.ban) throw new HttpException('User is banned from this room', 403);
+    if (user.mute) throw new HttpException('User is muted in this room', 403);
+    await this.prisma.roomUser.delete({
+      where: {
+        user_id_room_id: {
+          user_id: idUser,
+          room_id: idRoom,
+        },
+      },
+    });
+    this.gateway.server.emit('room:updated');
+  }
+
+  async updateUser(idRoom: string, idUser: string, body: RoomUserDto) {
     const roomUser = await this.prisma.roomUser.updateMany({
       where: {
         user_id: idUser,
@@ -226,6 +311,7 @@ export class RoomsService {
         mute: body.mute,
       },
     });
+    this.gateway.server.emit('room:updated');
     return roomUser;
   }
 }

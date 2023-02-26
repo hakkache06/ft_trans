@@ -193,7 +193,7 @@ function Profile() {
     load();
   }, []);
 
-  if (loading) return <Loading />;
+  if (loading) return <Loading className="h-screen" />;
 
   return (
     <div>

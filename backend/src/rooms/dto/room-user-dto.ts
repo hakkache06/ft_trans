@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsBoolean, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
+import { IsBoolean, IsOptional } from 'class-validator';
 
 export class RoomUserDto {
   @IsOptional()

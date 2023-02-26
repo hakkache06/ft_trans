@@ -4,7 +4,6 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   Put,
@@ -21,6 +20,12 @@ import { Request } from 'express';
 @Controller('rooms')
 export class RoomsController {
   constructor(private roomsService: RoomsService) {}
+
+  @Post('dm/:user_id')
+  @UseGuards(JwtGuard)
+  async dmUser(@Param('user_id') idUser: string, @Req() req: Request) {
+    return this.roomsService.dmUser(idUser, req.user.id);
+  }
 
   @UsePipes(new ValidationPipe())
   @Post()
@@ -69,11 +74,18 @@ export class RoomsController {
     @Param('user_id') idUser: string,
     @Req() req: Request,
   ) {
-    return this.roomsService.kickUser(idRoom, idUser, req.user.id);
+    this.roomsService.verifyAdmin(idRoom, req.user.id);
+    return this.roomsService.leaveRoom(idRoom, idUser);
+  }
+
+  @Delete(':id/users')
+  @UseGuards(JwtGuard)
+  async leaveRoom(@Param('id') idRoom: string, @Req() req: Request) {
+    return this.roomsService.leaveRoom(idRoom, req.user.id);
   }
 
   @UsePipes(new ValidationPipe())
-  @Put(':id/users/:user_id')
+  @Patch(':id/users/:user_id')
   @UseGuards(JwtGuard)
   async updateUser(
     @Param('id') idRoom: string,
@@ -81,6 +93,9 @@ export class RoomsController {
     @Body() body: RoomUserDto,
     @Req() req: Request,
   ) {
-    return this.roomsService.updateUser(idRoom, idUser, body, req.user.id);
+    this.roomsService.verifyAdmin(idRoom, req.user.id);
+    if (body.admin !== undefined)
+      await this.roomsService.verifyOwner(idRoom, req.user.id);
+    return this.roomsService.updateUser(idRoom, idUser, body);
   }
 }

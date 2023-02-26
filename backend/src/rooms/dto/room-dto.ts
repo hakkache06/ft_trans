@@ -1,5 +1,5 @@
 import { RoomType } from '@prisma/client';
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class RoomDto {
   @IsNotEmpty()
@@ -9,7 +9,6 @@ export class RoomDto {
   @IsEnum(RoomType)
   type: RoomType;
 
-  @IsString()
   @IsOptional()
   password: string;
 }
