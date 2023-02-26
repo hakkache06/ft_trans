@@ -71,4 +71,10 @@ export class UserController {
   uploadFile(@UploadedFile() file: Express.Multer.File) {
     return { url: process.env.FILES_URL + file.filename };
   }
+
+  @Get(':id')
+  @UseGuards(JwtGuard)
+  gethistoryMatch(@Req() req: Request) {
+    return this.userService.gethistoryMatch(req);
+  }
 }

@@ -1,4 +1,4 @@
-import { IconUsers, IconLock, IconEyeOff } from "@tabler/icons-react";
+import { IconUsers, IconLock, IconEyeOff, IconArrowsLeftRight } from "@tabler/icons-react";
 
 export const types = {
   public: {
@@ -8,6 +8,10 @@ export const types = {
   protected: {
     label: "Protected",
     icon: <IconLock size={16} />,
+  },
+  dm: {
+    label: null,
+    icon: <IconArrowsLeftRight size={16} />,
   },
   private: {
     label: "Private",

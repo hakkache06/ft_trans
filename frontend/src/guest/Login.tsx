@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Navigate, useNavigate } from "react-router-dom";
-import { api, useAuth, useQuery } from "../utils";
+import { api, useQuery } from "../utils";
 import { Paper, Text, Button } from "@mantine/core";
 import { Loading } from "../components/Loading";
+import { useAuth } from "../stores";
 
 const FTIcon = () => (
   <svg

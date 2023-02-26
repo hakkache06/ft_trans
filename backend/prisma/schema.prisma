@@ -20,6 +20,8 @@ model User {
   wins       Int      @default(0)
   loses      Int      @default(0)
   created_at DateTime @default(now())
+  achivement     String
+
 
   Friends   Friend[]    @relation("from")
   Friendsto Friend[]    @relation("to")
@@ -69,6 +71,7 @@ enum RoomType {
   public
   private
   protected
+  dm
 }
 
 model Room {

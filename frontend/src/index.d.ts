@@ -31,5 +31,5 @@ interface Room {
   name: string;
   password: string | null;
   id_user_owner: string;
-  type: "public" | "private" | "protected";
+  type: "public" | "private" | "protected" | "dm";
 }

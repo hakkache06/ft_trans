@@ -141,8 +141,8 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     const idUser = this.fetchUser(client.id);
     if (!idUser) return;
-    console.log(`User ${idUser} left room : ${payload.room}`);
-    client.leave(payload.room);
+    console.log(`User ${idUser} left room : ${payload}`);
+    client.leave(payload);
   }
 
   @SubscribeMessage('game:queue')

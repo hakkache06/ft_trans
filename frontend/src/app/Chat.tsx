@@ -90,7 +90,7 @@ function NewRoom() {
           <SegmentedControl
             mt="md"
             {...form.getInputProps("type")}
-            data={Object.entries(types).map(([value, { label, icon }]) => ({
+            data={Object.entries(types).filter((v) => v[1].label).map(([value, { label, icon }]) => ({
               value,
               label: (
                 <Center>
