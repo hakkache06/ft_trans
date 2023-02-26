@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -76,6 +76,22 @@ export class UserService {
       });
       if (deleteByid) return deleteByid;
       else return { meassgae: `Error deleteByid` };
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;
+    }
+  }
+
+  async gethistoryMatch(req) {
+    try {
+      const history = await this.prisma.game.findMany({
+        where: { player1_id: req.user.id },
+        select: {
+          player1_id: true,
+          player2_id: true,
+        },
+      });
+      if (history) return history;
+      else throw new BadRequestException('  not have any Match History');
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;
     }

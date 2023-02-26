@@ -4,15 +4,15 @@ import { gameDto } from './dto';
 
 @Controller('games')
 export class GamesController {
-    constructor(private gamesService: GamesService) {}
+  constructor(private gamesService: GamesService) {}
 
-    @Get('')
-    async getAllGames(@Req() req: Request) {
-        return this.gamesService.getAllGames(req);
-    }
+  @Get('')
+  async getAllGames(@Req() req: Request) {
+    return this.gamesService.getAllGames(req);
+  }
 
-    @Post('')
-    async createGame(@Req() req: Request, @Body() body: gameDto) {
-        return this.gamesService.createGame(req, body);
-    }
+  @Post('')
+  async createGame(@Req() req: Request, @Body() body: gameDto) {
+    return this.gamesService.createGame(req, body);
+  }
 }
