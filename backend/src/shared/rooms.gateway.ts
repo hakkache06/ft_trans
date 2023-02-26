@@ -1,3 +1,4 @@
+import { HttpException } from '@nestjs/common';
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -18,6 +19,9 @@ import { PrismaService } from 'src/prisma/prisma.service';
 })
 export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly idUserToSocketIdMap: Map<string, Set<string>> = new Map();
+  private players: Socket[] = [];
+  private watchers: Socket[] = [];
+
   @WebSocketServer() server: Server;
   constructor(private prisma: PrismaService) {}
 
@@ -58,6 +62,22 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return this.idUserToSocketIdMap.get(id).has(idClient);
     });
     return idUser;
+  }
+
+  playerSocket(idClient: string) {
+    const idUser = [...this.idUserToSocketIdMap.keys()].find((id) => {
+      console.log(id, idClient, this.idUserToSocketIdMap.get(id));
+      return this.idUserToSocketIdMap.get(id).has(idClient);
+    });
+    const socketPlayer = () => {
+      for (let socketId of this.idUserToSocketIdMap.get(idUser)) {
+        const socket = this.server.sockets.sockets.get(socketId);
+        if (socket.data.role == 'player')
+          return true;
+      }
+      return false;
+    }
+    return socketPlayer;
   }
 
   verifyToken(token: string) {
@@ -126,12 +146,103 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.leave(payload.room);
   }
 
-  @SubscribeMessage('game:join')
-  async joinGame(
+  @SubscribeMessage('game:queue')
+  async joinLobby(
     @MessageBody() payload: any,
     @ConnectedSocket() client: Socket,
   ) {
-    
+    if (this.players.length < 2) {
+      this.players.push(client);
+    } else {
+      if (this.players.every((p) => p.connected)) {
+        this.players[0].data.role = 'player';
+        this.players[1].data.role = 'player';
+        const user1 = this.fetchUser(this.players[0].id);
+        const user2 = this.fetchUser(this.players[1].id);
+        this.server.emit('matched', {
+          player1: user1,
+          player2: user2,
+        });
+        this.startGame();
+      } else {
+        return 'User not connected';
+      }
+    }
   }
 
+  @SubscribeMessage('game:invite')
+  async inviteToGame(
+    @MessageBody() payload: any,
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (this.players.every((p) => p.connected)) {
+      this.players.push(client);
+      this.players.push(payload.opponent);
+      this.players[0].data.role = 'player';
+      this.players[1].data.role = 'player';
+      const user1 = this.fetchUser(this.players[0].id);
+      const user2 = this.fetchUser(this.players[1].id);
+      this.server.emit('matched', {
+        player1: user1,
+        player2: user2,
+      });
+      this.startGame();
+    }
+  }
+
+  async startGame() {
+    const user1 = this.fetchUser(this.players[0].id);
+    const user2 = this.fetchUser(this.players[1].id);
+    const game_room = await this.prisma.game.create({
+      data: {
+        background: 'default',
+        player1_id: user1,
+        player2_id: user2,
+      },
+    });
+
+    this.players[0].join(game_room.id);
+    this.players[1].join(game_room.id);
+
+    this.players.pop();
+    this.players.pop();
+  }
+
+  @SubscribeMessage('game:move')
+  async move(@MessageBody() payload: any, @ConnectedSocket() client: Socket) {
+    const user = this.fetchUser(client.id);
+    if (client.data.role == 'player')
+      this.server.to(payload.room).emit('moved', { player: user });
+  }
+
+  @SubscribeMessage('game:score')
+  async score(@MessageBody() payload: any, @ConnectedSocket() client: Socket) {
+    const user = this.fetchUser(client.id);
+    if (client.data.role == 'player')
+      this.server.to(payload.room).emit('scored', { player: user });
+  }
+
+  @SubscribeMessage('game:join')
+  async watchGame(
+    @MessageBody() payload: any,
+    @ConnectedSocket() client: Socket,
+  ) {
+    client.data.role = this.playerSocket(client.id)
+      ? (client.data.role = 'player')
+      : (client.data.role = 'watcher');
+    client.join(payload.room_id);
+  }
+
+  @SubscribeMessage('game:endGame')
+  async endGame(
+    @MessageBody() payload: any,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const socketsInMyRoom = this.server.sockets.adapter.rooms[payload.room_id];
+    if (socketsInMyRoom) {
+      socketsInMyRoom.forEach((socketId: Socket) => {
+        socketId.leave(payload.room_id);
+      });
+    }
+  }
 }
