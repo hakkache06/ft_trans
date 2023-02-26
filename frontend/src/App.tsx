@@ -1,6 +1,6 @@
 import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
 import logo from "./assets/logo.png";
-import { api, SocketContext, useAuth, useUsers } from "./utils";
+import { api, SocketContext } from "./utils";
 import { useContext, useEffect, useState } from "react";
 import {
   AppShell,
@@ -29,16 +29,15 @@ import {
   IconHourglass,
   IconLogout,
   IconMessages,
-  IconMoodSad2,
   IconPingPong,
   IconUserCircle,
-  IconUserOff,
   IconX,
 } from "@tabler/icons-react";
 import { io, Socket } from "socket.io-client";
 import { Loading } from "./components/Loading";
 import { toast } from "react-hot-toast";
 import { UserAvatar } from "./app/Room";
+import { useUsers, useAuth } from "./stores";
 
 const routes: any[] = [
   { icon: IconHome2, label: "Home", to: "/" },

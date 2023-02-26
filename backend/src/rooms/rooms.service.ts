@@ -6,13 +6,13 @@ import { RoomsGateway } from 'src/shared/rooms.gateway';
 
 @Injectable()
 export class RoomsService {
-  constructor(private prisma: PrismaService, private gateway: RoomsGateway) {}
+  constructor(private prisma: PrismaService, private gateway: RoomsGateway) { }
 
   async dmUser(idUser: string, idUser2: string) {
     let commonRoom = (
       await this.prisma.room.findMany({
         where: {
-          type: 'private',
+          type: 'dm',
           RoomUser: {
             every: {
               user_id: {
@@ -47,8 +47,8 @@ export class RoomsService {
       if (names.length !== 2) throw new HttpException('User not found', 404);
       commonRoom = await this.prisma.room.create({
         data: {
-          name: `DM: ` + names.map((name) => name.name).join(' & '),
-          type: 'private',
+          name: names.map((name) => name.name).join(' & '),
+          type: 'dm',
           RoomUser: {
             create: [
               {
@@ -102,14 +102,20 @@ export class RoomsService {
     const getRooms = await this.prisma.room.findMany({
       where: {
         OR: [
-          { OR: [{ type: 'protected' }, { type: 'public' }] },
+          {
+            type: {
+              in: ['protected', 'public'],
+            }
+          },
           {
             RoomUser: {
               some: {
                 user_id: idUser,
               },
             },
-            type: 'private',
+            type: {
+              in: ['private', 'dm'],
+            },
           },
         ],
       },

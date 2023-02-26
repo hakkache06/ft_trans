@@ -47,7 +47,8 @@ import toast from "react-hot-toast";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Loading } from "../components/Loading";
 import { types } from "../shared";
-import { api, SocketContext, useAuth, useUsers } from "../utils";
+import { useAuth, useUsers } from "../stores";
+import { api, SocketContext } from "../utils";
 
 export function Welcome() {
   return (
@@ -127,7 +128,7 @@ function EditRoom({ room }: { room: Room }) {
           <SegmentedControl
             mt="md"
             {...form.getInputProps("type")}
-            data={Object.entries(types).map(([value, { label, icon }]) => ({
+            data={Object.entries(types).filter((v) => v[1].label).map(([value, { label, icon }]) => ({
               value,
               label: (
                 <Center>
@@ -689,9 +690,9 @@ function Room() {
         <div className="flex gap-3">
           {currentUser?.owner && <EditRoom room={room} />}
           <RoomUsers room={room} currentUser={currentUser} />
-          <ActionIcon onClick={leave} variant="light" color="red">
+          {room.type !== "dm"  && <ActionIcon onClick={leave} variant="light" color="red">
             <IconDoorExit size={18} />
-          </ActionIcon>
+          </ActionIcon>}
         </div>
       </div>
       <Messages id={room.id} currentUser={currentUser} />

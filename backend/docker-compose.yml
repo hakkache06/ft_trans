@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   nest-postgres:
-    image: postgres:14
+    image: postgres:alpine
     container_name: nest-postgres
     restart: always
     ports:

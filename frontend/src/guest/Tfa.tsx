@@ -1,7 +1,8 @@
 import toast from "react-hot-toast";
 import PinField from "react-pin-field";
 import { Navigate, useNavigate } from "react-router-dom";
-import { api, useAuth } from "../utils";
+import { useAuth } from "../stores";
+import { api } from "../utils";
 
 function Tfa() {
   const auth = useAuth();

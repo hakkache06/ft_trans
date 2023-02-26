@@ -77,7 +77,7 @@ export class FriendsService {
         ],
       },
     });
-    if (!friend.accepted)
+    if (friend && !friend.accepted)
       throw new BadRequestException('Friend request already sent');
     else if (friend) throw new BadRequestException('Friend already added');
     await this.prisma.friend.create({

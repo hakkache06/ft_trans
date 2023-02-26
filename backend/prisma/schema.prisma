@@ -69,6 +69,7 @@ enum RoomType {
   public
   private
   protected
+  dm
 }
 
 model Room {
