@@ -1,82 +1,118 @@
-import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
-import console from 'console';
-import { async } from 'rxjs';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { RoomsGateway } from 'src/shared/rooms.gateway';
 
 @Injectable()
 export class FriendsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private gateway: RoomsGateway) {}
 
   //Fetch user By name (?)
-  async fetchAllfriends(b) {
-    try {
-      const fetch = await this.prisma.friend.findMany({});
-      return fetch;
-    } catch (e) {
-      if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;
-    }
+  async fetchAllfriends(id: string) {
+    const sent = (
+      await this.prisma.friend.findMany({
+        where: {
+          from_id: id,
+          accepted: true,
+        },
+        select: {
+          to: {
+            select: {
+              id: true,
+              avatar: true,
+              name: true,
+            },
+          },
+        },
+      })
+    ).map((e) => e.to);
+    const received = await this.prisma.friend.findMany({
+      where: {
+        to_id: id,
+      },
+      select: {
+        from: {
+          select: {
+            id: true,
+            avatar: true,
+            name: true,
+          },
+        },
+        accepted: true,
+      },
+    });
+    const pending = received.filter((e) => !e.accepted).map((e) => e.from);
+    const friends = received
+      .filter((e) => e.accepted)
+      .map((e) => e.from)
+      .concat(sent);
+    return { friends, pending };
   }
 
   async addFrineds(idUser: string, req) {
-    try {
-      //need check blocked
-      if (idUser === req.user.id)
-        return { meassgae: `It is not possible to add yourself!` };
-      const checkuser = await this.prisma.User.findMany({
-        where: { id: idUser },
-      });
-      if (Object.entries(checkuser).length !== 0) {
-        const newcheckuser = await this.prisma.friend.findMany({
-          where: { to_id: idUser },
-        });
-        if (Object.entries(newcheckuser).length === 0) {
-          const createcheckuser = await this.prisma.friend.create({
-            data: {
-              to_id: idUser,
-              from_id: req.user.id, // UseGuards(JwtGuard)
-              accepted: false,
-            },
-          });
-          if (createcheckuser) return { meassgae: `Add id ${idUser} Friend ` };
-          else return { meassgae: ` Error Add ` };
-        } else {
-          return { meassgae: `id ${idUser}  found in table Friends` };
-        }
-      } else {
-        return { meassgae: `id ${idUser} not found in table Users` };
-      }
-    } catch (e) {
-      if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;
-    }
+    if (idUser === req.user.id)
+      throw new BadRequestException('It is not possible to add yourself!');
+    const checkuser = await this.prisma.user.count({
+      where: {
+        id: {
+          in: [idUser, req.user.id],
+        },
+      },
+    });
+    if (checkuser !== 2) throw new NotFoundException('User not found!');
+    const friend = await this.prisma.friend.findFirst({
+      where: {
+        OR: [
+          {
+            from_id: req.user.id,
+            to_id: idUser,
+          },
+          {
+            from_id: idUser,
+            to_id: req.user.id,
+          },
+        ],
+      },
+    });
+    if (!friend.accepted)
+      throw new BadRequestException('Friend request already sent');
+    else if (friend) throw new BadRequestException('Friend already added');
+    await this.prisma.friend.create({
+      data: {
+        to_id: idUser,
+        from_id: req.user.id,
+        accepted: false,
+      },
+    });
+    this.gateway.server.emit('users:friends');
   }
 
   async removeFriends(idUser: string, req) {
-    try {
-      if (idUser === req.user.id) return { meassgae: `Error` };
-      const removedFriend = await this.prisma.friend.deleteMany({
-        where: {
-          OR: [
-            {
-              from_id: req.user.id,
-              to_id: idUser,
-            },
-            {
-              from_id: idUser,
-              to_id: req.user.id,
-            },
-          ],
-        },
-      });
-      if (removedFriend) return { meassgae: `id removed ${idUser}` };
-      else return { meassgae: `Error removed` };
-    } catch (e) {
-      if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;
-    }
+    if (idUser === req.user.id)
+      throw new BadRequestException('It is not possible to remove yourself!');
+    const removedFriend = await this.prisma.friend.deleteMany({
+      where: {
+        OR: [
+          {
+            from_id: req.user.id,
+            to_id: idUser,
+          },
+          {
+            from_id: idUser,
+            to_id: req.user.id,
+          },
+        ],
+      },
+    });
+    if (!removedFriend) throw new NotFoundException('Firend not found!');
+    this.gateway.server.emit('users:friends');
   }
 
   async acceptFriends(idUser: string, req) {
-    const accepted = await this.prisma.friend.update({
+    await this.prisma.friend.update({
       where: {
         from_id_to_id: {
           from_id: idUser,
@@ -87,19 +123,7 @@ export class FriendsService {
         accepted: true,
       },
     });
-    if (accepted) return { message: 'Friend Accepted' };
-  }
-
-  async getFriends(req) {
-    try {
-      const getFriends = await this.prisma.friend.findMany({
-        where: { from_id: req.user.id },
-      });
-      if (getFriends) return { getFriends };
-      else return 'Erroe getFriends';
-    } catch (e) {
-      if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;
-    }
+    this.gateway.server.emit('users:friends');
   }
 }
 

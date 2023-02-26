@@ -33,8 +33,8 @@ model User {
 }
 
 model Friend {
-  user1      User?    @relation("from", fields: [from_id], references: [id], onDelete: Cascade)
-  user2      User?    @relation("to", fields: [to_id], references: [id], onDelete: Cascade)
+  from       User?    @relation("from", fields: [from_id], references: [id], onDelete: Cascade)
+  to         User?    @relation("to", fields: [to_id], references: [id], onDelete: Cascade)
   from_id    String
   to_id      String
   accepted   Boolean  @default(false)
@@ -44,8 +44,8 @@ model Friend {
 }
 
 model Blocklist {
-  user1      User?    @relation("from", fields: [from_id], references: [id], onDelete: Cascade)
-  user2      User?    @relation("to", fields: [to_id], references: [id], onDelete: Cascade)
+  from       User?    @relation("from", fields: [from_id], references: [id], onDelete: Cascade)
+  to         User?    @relation("to", fields: [to_id], references: [id], onDelete: Cascade)
   from_id    String
   to_id      String
   created_at DateTime @default(now())

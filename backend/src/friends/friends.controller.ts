@@ -1,15 +1,16 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
   Req,
-  Res,
   UseGuards,
 } from '@nestjs/common';
 import { JwtGuard } from 'src/auth/guards';
 import { FriendsService } from './friends.service';
+import { Request } from 'express';
 
 @Controller('friends')
 export class FriendsController {
@@ -17,8 +18,9 @@ export class FriendsController {
 
   // Get All friend from table
   @Get('')
-  fetchAllFriends(@Body() b) {
-    return this.friendsService.fetchAllfriends(b);
+  @UseGuards(JwtGuard)
+  fetchAllFriends(@Req() req: Request) {
+    return this.friendsService.fetchAllfriends(req.user.id);
   }
   //// id kayen
   // block
@@ -33,22 +35,16 @@ export class FriendsController {
   ) {
     return this.friendsService.addFrineds(idUser, req);
   }
-  @Post('/delete/:id')
+  @Delete(':id')
   @UseGuards(JwtGuard)
   removeFriends(@Param('id') idUser: string, @Req() req: Request) {
     return this.friendsService.removeFriends(idUser, req);
   }
 
-  @Post('/accepteFriend/:id')
+  @Post('/accept/:id')
   @UseGuards(JwtGuard)
   acceptFriends(@Param('id') idUser: string, @Req() req: Request) {
     return this.friendsService.acceptFriends(idUser, req);
-  }
-  // get Friends()
-  @Get('/getfriends')
-  @UseGuards(JwtGuard)
-  getFriends(@Req() req: Request) {
-    return this.friendsService.getFriends(req);
   }
   // Accepte add Friend
 }

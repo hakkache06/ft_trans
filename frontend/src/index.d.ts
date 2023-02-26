@@ -11,14 +11,16 @@ interface Message {
   };
 }
 
+interface User {
+  avatar: string;
+  name: string;
+  id: string;
+}
+
 interface Room {
   RoomUser: [
     {
-      user: {
-        avatar: string;
-        name: string;
-        id: string;
-      };
+      user: User;
       owner: boolean;
       admin: boolean;
       ban: boolean;

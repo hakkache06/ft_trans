@@ -29,6 +29,7 @@ import {
   IconEyeCheck,
   IconEyeOff,
   IconFriends,
+  IconFriendsOff,
   IconHandStop,
   IconListDetails,
   IconMessagePlus,
@@ -46,7 +47,7 @@ import toast from "react-hot-toast";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Loading } from "../components/Loading";
 import { types } from "../shared";
-import { api, SocketContext, useAuth } from "../utils";
+import { api, SocketContext, useAuth, useUsers } from "../utils";
 
 export function Welcome() {
   return (
@@ -473,7 +474,7 @@ function RoomUsers({
   );
 }
 
-function UserAvatar({
+export function UserAvatar({
   user,
   size,
 }: {
@@ -482,6 +483,7 @@ function UserAvatar({
 }) {
   const auth = useAuth();
   const navigate = useNavigate();
+  const [friends] = useUsers((state) => [state.friends]);
 
   const dm = () => {
     toast.promise(
@@ -497,6 +499,27 @@ function UserAvatar({
         error: "Failed to retrieve direct messages",
       }
     );
+  };
+
+  const addFriend = () => {
+    toast.promise(
+      api.post(`friends/${user.id}`).catch(async (e) => {
+        throw (await e.response.json()).message;
+      }),
+      {
+        loading: "Adding friend...",
+        success: "Friend request sent",
+        error: (e) => e,
+      }
+    );
+  };
+
+  const removeFriend = () => {
+    toast.promise(api.delete(`friends/${user.id}`), {
+      loading: "Removing friend",
+      success: "Friend removed",
+      error: "Failed to remove friend",
+    });
   };
 
   return (
@@ -518,7 +541,18 @@ function UserAvatar({
         </Link>
         {user.id !== auth.id && (
           <>
-            <Menu.Item icon={<IconFriends size={14} />}>Add friend</Menu.Item>
+            {friends.find((f) => f.id === user.id) ? (
+              <Menu.Item
+                onClick={removeFriend}
+                icon={<IconFriendsOff size={14} />}
+              >
+                Remove friend
+              </Menu.Item>
+            ) : (
+              <Menu.Item onClick={addFriend} icon={<IconFriends size={14} />}>
+                Add friend
+              </Menu.Item>
+            )}
             <Menu.Item onClick={dm} icon={<IconMessagePlus size={14} />}>
               Private message
             </Menu.Item>
