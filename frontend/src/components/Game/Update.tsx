@@ -33,7 +33,8 @@ export default function Update(
   if (player2.y < 0) player2.y = 2;
   else if (player2.y > canvas.height - player2.height)
     player2.y = canvas.height - player2.height - 2;
-  if (ball.x >= canvas.width || ball.x <= 0) {
+  if (collision(ball, player1) || collision(ball, player2)) ball.velocityX *= -1.05;
+  else if (ball.x >= canvas.width || ball.x <= 0) {
     if (ball.x <= 0) player2.score++;
     else player1.score++;
     const temp: Ball = createBall(canvas);
@@ -46,8 +47,6 @@ export default function Update(
     setTimeout(() => {
       ball.stop = false;
     }, 2000);
-  } else if (collision(ball, player1) || collision(ball, player2)) {
-    ball.velocityX *= -1.05;
   }
   if (ball.y >= canvas.height || ball.y <= 0) ball.velocityY *= -1;
   if (ball.velocityX >= 20) ball.velocityX = 20;

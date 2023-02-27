@@ -11,7 +11,7 @@ function Table() {
   const ref = useCallback((node: HTMLCanvasElement) => {
     console.log("node", node);
     if (!node) return;
-    const FPS = 30;
+    const FPS = 60;
     const options: string[] = [
       // "https://images.unsplash.com/photo-1677145316529-a6e02cc8c504?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=3570&q=80",
       "https://4kwallpapers.com/images/walls/thumbs_3t/4523.jpg",
@@ -22,7 +22,6 @@ function Table() {
     const canvas = node;
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     let ball: Ball = createBall(canvas);
-    console.log(ball.velocityY);
     let player1: Player = {
       width: canvas.width - (99 * canvas.width) / 100,
       height: canvas.height - (80 * canvas.height) / 100,
@@ -41,7 +40,7 @@ function Table() {
     };
     canvas.addEventListener("mousemove", (event: MouseEvent) => {
       let y = ((event.clientY - canvas.offsetTop) / canvas.offsetHeight) * 100;
-      console.log(y);
+      // console.log(y);
       y = (y * canvas.height) / 100;
       player1.y = y - player1.height / 2;
       if (player1.y < 0) player1.y = 2;
@@ -62,7 +61,7 @@ function Table() {
   return (
     <center>
       <div className="game-container shadow-2xl ssd sds">
-        <canvas ref={ref} id="pong" width="1920" height="1080"></canvas>
+        <canvas ref={ref} id="pong" width="1280" height="720"></canvas>
       </div>
     </center>
   );

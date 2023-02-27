@@ -14,18 +14,17 @@ export function createBall(canvas: HTMLCanvasElement): Ball {
     x: canvas.width / 2,
     y: canvas.height / 2,
     radius: 15,
-    speed: 50,
+    speed: 30,
     velocityX: 0,
     velocityY: 0,
     color: "WHITE",
     stop: false,
   };
-  if (Math.random() > 0.5) ball.velocityX = 5;
-  else ball.velocityX = -5;
-  while (ball.velocityY * 10 < 20 && ball.velocityY * 10 > -20) {
+  if (Math.random() > 0.5) ball.velocityX = 4;
+  else ball.velocityX = -4;
+  while (ball.velocityY * 10 < 35 && ball.velocityY * 10 > -35) {
     if (Math.random() > 0.5) ball.velocityY = (Math.random() * 10) % 5;
     else ball.velocityY = (Math.random() * 10) % 5;
-    console.log(ball.velocityY * 10);
   }
 
   return ball;
