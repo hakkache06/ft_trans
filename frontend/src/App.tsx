@@ -237,24 +237,22 @@ function Layout({ user }: { user: any }) {
   const { pathname } = useLocation();
   const { logout } = useAuth();
   const socket = useContext(SocketContext);
-  const { fetchFriends, setOnline } = useUsers(
-    ({ fetchFriends, setOnline }) => ({ fetchFriends, setOnline })
+  const [fetchFriends, setOnline, fetchBlocklist] = useUsers(
+    (state) => ([state.fetchFriends, state.setOnline, state.fetchBlocklist ])
   );
 
   const currentRoute = "/" + (pathname + "/").split("/")[1];
 
   useEffect(() => {
     fetchFriends();
+    fetchBlocklist();
     if (!socket) return;
     const old = socket
-      .on("users:online", (data: string[]) => {
-        setOnline(data);
-      })
-      .on("users:friends", () => {
-        fetchFriends();
-      });
+      .on("users:online", (data: string[]) => setOnline(data))
+      .on("users:friends", () => fetchFriends())
+      .on("users:blocklist", () => fetchBlocklist());
     return () => {
-      old.off("users:online").off("users:friends");
+      old.off("users:online").off("users:friends").off("users:blocklist")
     };
   }, [socket]);
 
@@ -377,9 +375,6 @@ export default function App() {
     });
     s.on("disconnect", () => {
       toast.error("Disconnected from server, please refresh the page");
-    });
-    s.on("connect_error", (error) => {
-      toast.error("Couldn't connect, please refresh the page");
     });
     setSocket(s);
     return () => {

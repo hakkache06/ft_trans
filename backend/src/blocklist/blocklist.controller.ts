@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { BlocklistService } from './blocklist.service';
-import { Body, Delete, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { Delete, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { JwtGuard } from 'src/auth/guards';
 import { Request } from 'express';
 

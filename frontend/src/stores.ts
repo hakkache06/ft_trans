@@ -42,6 +42,7 @@ interface AuthState {
     online: string[];
     blocklist: string[];
     fetchFriends: () => Promise<void>;
+    fetchBlocklist: () => Promise<void>;
     setFriends: (friends: User[]) => void;
     setOnline: (online: string[]) => void;
     setBlocklist: (blocklist: string[]) => void;
@@ -57,6 +58,11 @@ interface AuthState {
         pending: User[];
       }>();
       set({ friends, pending });
+    },
+    fetchBlocklist: async () => {
+      const response = await api.get("blocklist");
+      const blocklist= await response.json<string[]>();
+      set({ blocklist });
     },
     setFriends: (friends: User[]) =>
       set({

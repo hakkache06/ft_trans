@@ -30,6 +30,7 @@ import {
   IconEyeOff,
   IconFriends,
   IconFriendsOff,
+  IconHandOff,
   IconHandStop,
   IconListDetails,
   IconMessagePlus,
@@ -128,15 +129,17 @@ function EditRoom({ room }: { room: Room }) {
           <SegmentedControl
             mt="md"
             {...form.getInputProps("type")}
-            data={Object.entries(types).filter((v) => v[1].label).map(([value, { label, icon }]) => ({
-              value,
-              label: (
-                <Center>
-                  {icon}
-                  <Box ml={10}>{label}</Box>
-                </Center>
-              ),
-            }))}
+            data={Object.entries(types)
+              .filter((v) => v[1].label)
+              .map(([value, { label, icon }]) => ({
+                value,
+                label: (
+                  <Center>
+                    {icon}
+                    <Box ml={10}>{label}</Box>
+                  </Center>
+                ),
+              }))}
           />
           <Group mt="md">
             <Button type="submit">Update room</Button>
@@ -246,19 +249,7 @@ function Messages({
         className="flex-grow"
       >
         {messages.map((message) => (
-          <div
-            key={message.id}
-            className="p-3 flex gap-3 hover:bg-slate-50 transition-colors"
-          >
-            <UserAvatar user={message.user} size="md" />
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold">{message.user.name}</span>{" "}
-                <small>{format(new Date(message.created_at), "Pp")}</small>
-              </div>
-              <div>{message.content}</div>
-            </div>
-          </div>
+          <Message key={message.id} message={message} />
         ))}
       </ScrollArea>
       {mutedUntil ? (
@@ -286,6 +277,28 @@ function Messages({
         </div>
       )}
     </>
+  );
+}
+
+function Message({ message }: { message: Message }) {
+  const [blocklist] = useUsers((state) => [state.blocklist]);
+
+  if (blocklist.includes(message.user.id)) return null;
+
+  return (
+    <div
+      key={message.id}
+      className="p-3 flex gap-3 hover:bg-slate-50 transition-colors"
+    >
+      <UserAvatar user={message.user} size="md" />
+      <div>
+        <div className="flex items-center gap-2">
+          <span className="font-bold">{message.user.name}</span>{" "}
+          <small>{format(new Date(message.created_at), "Pp")}</small>
+        </div>
+        <div>{message.content}</div>
+      </div>
+    </div>
   );
 }
 
@@ -484,7 +497,10 @@ export function UserAvatar({
 }) {
   const auth = useAuth();
   const navigate = useNavigate();
-  const [friends] = useUsers((state) => [state.friends]);
+  const [friends, blocklist] = useUsers((state) => [
+    state.friends,
+    state.blocklist,
+  ]);
 
   const dm = () => {
     toast.promise(
@@ -520,6 +536,22 @@ export function UserAvatar({
       loading: "Removing friend",
       success: "Friend removed",
       error: "Failed to remove friend",
+    });
+  };
+
+  const block = () => {
+    toast.promise(api.post(`blocklist/${user.id}`), {
+      loading: "Blocking user...",
+      success: "User blocked",
+      error: "Failed to block user",
+    });
+  };
+
+  const unblock = () => {
+    toast.promise(api.delete(`blocklist/${user.id}`), {
+      loading: "Unblocking user...",
+      success: "User unblocked",
+      error: "Failed to unblock user",
     });
   };
 
@@ -560,7 +592,15 @@ export function UserAvatar({
             <Menu.Item icon={<IconDeviceGamepad2 size={14} />}>
               Invite to game
             </Menu.Item>
-            <Menu.Item icon={<IconHandStop size={14} />}>Block user</Menu.Item>
+            {blocklist.includes(user.id) ? (
+              <Menu.Item onClick={unblock} icon={<IconHandOff size={14} />}>
+                Unblock user
+              </Menu.Item>
+            ) : (
+              <Menu.Item onClick={block} icon={<IconHandStop size={14} />}>
+                Block user
+              </Menu.Item>
+            )}
           </>
         )}
       </Menu.Dropdown>
@@ -690,9 +730,11 @@ function Room() {
         <div className="flex gap-3">
           {currentUser?.owner && <EditRoom room={room} />}
           <RoomUsers room={room} currentUser={currentUser} />
-          {room.type !== "dm"  && <ActionIcon onClick={leave} variant="light" color="red">
-            <IconDoorExit size={18} />
-          </ActionIcon>}
+          {room.type !== "dm" && (
+            <ActionIcon onClick={leave} variant="light" color="red">
+              <IconDoorExit size={18} />
+            </ActionIcon>
+          )}
         </div>
       </div>
       <Messages id={room.id} currentUser={currentUser} />

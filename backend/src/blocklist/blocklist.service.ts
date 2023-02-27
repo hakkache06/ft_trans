@@ -12,37 +12,44 @@ export class BlocklistService {
 
   async fetchAllBlocklist(id: string) {
     const blockedList = await this.prisma.blocklist.findMany({
-        where: {
-            from_id: id,
-        },
-        select: {
-            to_id: true,
-        }
-    });
-    return blockedList;
-  }
-
-  async addToBlocklist(from: string, to: string) {
-   await this.prisma.blocklist.create({
-     data: {
-       from_id: from,
-       to_id: to,
-     },
-   });
-    this.gateway.server.emit('users:blocklist');
-  }
-
-  async rmvFromBlocklist(from: string, to: string) {
-   await this.prisma.blocklist.delete({
       where: {
-        from_id_to_id: {
-            from_id: from,
-            to_id: to,
-        }
-      }
+        from_id: id,
+      },
+      select: {
+        to_id: true,
+      },
+    });
+    return blockedList.map((b) => b.to_id);
+  }
+
+  async addToBlocklist(to_id: string, from_id: string) {
+    if (to_id === from_id)
+      throw new BadRequestException('It is not possible to block yourself!');
+    if (
+      !(await this.prisma.user.count({
+        where: {
+          id: to_id,
+        },
+      }))
+    )
+      throw new NotFoundException('User not found!');
+    await this.prisma.blocklist.createMany({
+      data: {
+        from_id,
+        to_id,
+      },
+      skipDuplicates: true,
     });
     this.gateway.server.emit('users:blocklist');
   }
 
-
+  async rmvFromBlocklist(to_id: string, from_id: string) {
+    await this.prisma.blocklist.deleteMany({
+      where: {
+        from_id,
+        to_id,
+      },
+    });
+    this.gateway.server.emit('users:blocklist');
+  }
 }

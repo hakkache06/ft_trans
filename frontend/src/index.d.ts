@@ -1,5 +1,5 @@
 interface Message {
-  id: 2;
+  id: number;
   content: string;
   created_at: string;
   room_id: string;
