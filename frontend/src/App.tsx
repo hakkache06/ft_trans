@@ -1,4 +1,10 @@
-import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
+import {
+  Link,
+  Navigate,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import logo from "./assets/logo.png";
 import { api, SocketContext } from "./utils";
 import { useContext, useEffect, useState } from "react";
@@ -19,6 +25,9 @@ import {
   Divider,
   ActionIcon,
   Badge,
+  Modal,
+  Loader,
+  Button,
 } from "@mantine/core";
 import {
   IconCheck,
@@ -37,11 +46,24 @@ import { io, Socket } from "socket.io-client";
 import { Loading } from "./components/Loading";
 import { toast } from "react-hot-toast";
 import { UserAvatar } from "./app/Room";
-import { useUsers, useAuth } from "./stores";
+import { useUsers, useAuth, useQueue } from "./stores";
+import { ModalsProvider, openContextModal } from "@mantine/modals";
+import { NewGame } from "./components/Games/New";
 
-const routes: any[] = [
+const routes = [
   { icon: IconHome2, label: "Home", to: "/" },
-  { icon: IconPingPong, label: "New Game", to: "/games/new" },
+  // {
+  //   icon: IconPingPong,
+  //   label: "New Game",
+  //   onClick: () =>
+  //     openContextModal({
+  //       modal: "NewGame",
+  //       title: "Start a New Game",
+  //       centered: true,
+  //       transitionDuration: 200,
+  //       innerProps: {},
+  //     }),
+  // },
   { icon: IconMessages, label: "Chat", to: "/chat" },
 ];
 
@@ -237,11 +259,12 @@ function Layout({ user }: { user: any }) {
   const { pathname } = useLocation();
   const { logout } = useAuth();
   const socket = useContext(SocketContext);
-  const [fetchFriends, setOnline, fetchBlocklist] = useUsers((state) => [
+  const [fetchFriends, fetchBlocklist] = useUsers((state) => [
     state.fetchFriends,
-    state.setOnline,
     state.fetchBlocklist,
   ]);
+  const queue = useQueue((state) => state.queue);
+  const navigate = useNavigate();
 
   const currentRoute = "/" + (pathname + "/").split("/")[1];
 
@@ -250,13 +273,22 @@ function Layout({ user }: { user: any }) {
     fetchBlocklist();
     if (!socket) return;
     const old = socket
-      .on("users:online", (data: string[]) => setOnline(data))
       .on("users:friends", () => fetchFriends())
-      .on("users:blocklist", () => fetchBlocklist());
+      .on("users:blocklist", () => fetchBlocklist())
+      .on("game:matched", (id) => {
+        navigate(`/game/${id}`);
+      });
     return () => {
-      old.off("users:online").off("users:friends").off("users:blocklist");
+      old.off("users:friends").off("users:blocklist");
     };
   }, [socket]);
+
+  const cancel = () => {
+    if (!socket) return;
+    socket.emit("game:cancel");
+  };
+
+  const matchmaking = queue.includes(socket?.id || "");
 
   return (
     <AppShell
@@ -283,6 +315,7 @@ function Layout({ user }: { user: any }) {
                   key={link.label}
                   active={link.to === currentRoute}
                   to={link.to}
+                  onClick={link.onClick}
                 />
               ))}
             </Stack>
@@ -350,6 +383,27 @@ function Layout({ user }: { user: any }) {
       <div className="container mx-auto min-h-full flex flex-col">
         <Outlet />
       </div>
+      <Modal
+        centered
+        withCloseButton={false}
+        closeOnClickOutside={false}
+        closeOnEscape={false}
+        opened={matchmaking}
+        overlayBlur={3}
+        onClose={() => {}}
+      >
+        <div className="flex flex-col items-center justify-center text-center py-5">
+          <Loader mt="sm" variant="bars" />
+          <h3>Matchmaking in progress</h3>
+          <p className="m-0">
+            We are searching for another player. You will be redirected to the
+            game once a match is found.
+          </p>
+          <Button mt="lg" color="red" variant="light" onClick={cancel}>
+            Cancel search
+          </Button>
+        </div>
+      </Modal>
     </AppShell>
   );
 }
@@ -358,6 +412,8 @@ export default function App() {
   const { token, tfa_required } = useAuth();
   const [socket, setSocket] = useState<Socket>();
   const [user, setUser] = useState<any>();
+  const setOnline = useUsers((state) => state.setOnline);
+  const setQueue = useQueue((state) => state.setQueue);
 
   useEffect(() => {
     if (!token || tfa_required) return;
@@ -374,10 +430,12 @@ export default function App() {
     });
     s.on("connect", () => {
       toast.success("Connected to server");
-    });
-    s.on("disconnect", () => {
-      toast.error("Disconnected from server, please refresh the page");
-    });
+    })
+      .on("disconnect", () => {
+        toast.error("Disconnected from server, please refresh the page");
+      })
+      .on("users:online", (data: string[]) => setOnline(data))
+      .on("game:queue", (data: string[]) => setQueue(data));
     setSocket(s);
     return () => {
       s.disconnect();
@@ -391,7 +449,9 @@ export default function App() {
 
   return (
     <SocketContext.Provider value={socket}>
-      <Layout user={user} />
+      <ModalsProvider modals={{ NewGame }}>
+        <Layout user={user} />
+      </ModalsProvider>
     </SocketContext.Provider>
   );
 }

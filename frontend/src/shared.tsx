@@ -1,4 +1,9 @@
-import { IconUsers, IconLock, IconEyeOff, IconArrowsLeftRight } from "@tabler/icons-react";
+import {
+  IconUsers,
+  IconLock,
+  IconEyeOff,
+  IconArrowsLeftRight,
+} from "@tabler/icons-react";
 
 export const types = {
   public: {
@@ -18,3 +23,10 @@ export const types = {
     icon: <IconEyeOff size={16} />,
   },
 };
+
+export const backgrounds = [
+  "/backgrounds/1.jpeg",
+  "/backgrounds/3.png",
+  "/backgrounds/1.jpeg",
+  "/backgrounds/3.png",
+];
