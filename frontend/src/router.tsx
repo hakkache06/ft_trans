@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import App from "./App";
 import Chat from "./app/Chat";
+import Game from "./app/Game";
 import Games from "./app/Games";
 import Profile from "./app/Profile";
 import Room, { Welcome } from "./app/Room";
@@ -17,6 +18,10 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <Games />,
+      },
+      {
+        path: "/game/:id",
+        element: <Game />,
       },
       {
         path: "/chat",

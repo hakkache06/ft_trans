@@ -1,6 +1,6 @@
-import { Body, Controller, Get, Post, Req } from '@nestjs/common';
+import { Controller, Get, Param, Req, UseGuards } from '@nestjs/common';
 import { GamesService } from './games.service';
-import { gameDto } from './dto';
+import { JwtGuard } from 'src/auth/guards';
 
 @Controller('games')
 export class GamesController {
@@ -11,8 +11,9 @@ export class GamesController {
     return this.gamesService.getAllGames(req);
   }
 
-  @Post('')
-  async createGame(@Req() req: Request, @Body() body: gameDto) {
-    return this.gamesService.createGame(req, body);
+  @Get(':id')
+  @UseGuards(JwtGuard)
+  async getOneRoom(@Param('id') idRoom: string) {
+    return this.gamesService.findOne(idRoom);
   }
 }

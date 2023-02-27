@@ -48,7 +48,7 @@ function Login() {
           .json<any>()
           .then((data) => {
             auth.login(data.access_token);
-            navigate("/");
+            navigate("/tfa");
           })
           .catch((e) => {
             setLoading(false);

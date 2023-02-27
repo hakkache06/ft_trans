@@ -6,7 +6,7 @@ import { IconRocket } from "@tabler/icons-react";
 import { useContext, useState } from "react";
 import toast from "react-hot-toast";
 import { backgrounds } from "../../shared";
-import { api, SocketContext } from "../../utils";
+import { SocketContext } from "../../utils";
 
 export const NewGame = ({
   context,

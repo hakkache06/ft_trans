@@ -1,3 +1,4 @@
+import { Paper, Text } from "@mantine/core";
 import toast from "react-hot-toast";
 import PinField from "react-pin-field";
 import { Navigate, useNavigate } from "react-router-dom";
@@ -33,14 +34,24 @@ function Tfa() {
   };
 
   return (
-    <div>
-      <PinField
-        className="pin-field"
-        validate="0123456789"
-        inputMode="numeric"
-        length={6}
-        onComplete={validate}
-      />
+    <div className="min-h-screen flex flex-col items-center justify-center">
+      <div className="w-full max-w-sm mx-auto">
+        <Paper withBorder shadow="md" p={30} mt={30} radius="md">
+          <Text size="lg" weight={500}>
+            2FA Authentication
+          </Text>
+          <Text size="sm" weight={500} color="dimmed" mt={5} mb="md">
+            Please enter the 6-digit code from your authenticator app
+          </Text>
+          <PinField
+            className="pin-field"
+            validate="0123456789"
+            inputMode="numeric"
+            length={6}
+            onComplete={validate}
+          />
+        </Paper>
+      </div>
     </div>
   );
 }

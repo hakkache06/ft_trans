@@ -33,3 +33,10 @@ interface Room {
   id_user_owner: string;
   type: "public" | "private" | "protected" | "dm";
 }
+
+interface Game {
+  id: string;
+  background: string;
+  player1: User;
+  player2: User;
+}

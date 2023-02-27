@@ -1,9 +1,7 @@
 import { Button } from "@mantine/core";
 import { openContextModal } from "@mantine/modals";
-import { IconPingPong, IconUserPlus } from "@tabler/icons-react";
+import { IconPingPong } from "@tabler/icons-react";
 import { useContext, useState } from "react";
-import { toast } from "react-hot-toast";
-import { useQueue } from "../stores";
 import { SocketContext } from "../utils";
 
 function Games() {

@@ -90,13 +90,6 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   //   return socketPlayer;
   // }
 
-  verifyToken(token: string) {
-    const { id } = verify(token, process.env.JWT_SECRET) as {
-      id: string;
-    };
-    return id;
-  }
-
   handleDisconnect(client: Socket) {
     console.log(`Disconnected: ${client.id}`);
     if (this.games.has(client.id)) this.games.delete(client.id);
@@ -124,7 +117,14 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleConnection(client: Socket) {
     console.log(`Connected ${client.id}`);
     try {
-      const id = this.verifyToken(client.handshake.auth.token);
+      const { id, tfa_required } = verify(
+        client.handshake.auth.token,
+        process.env.JWT_SECRET,
+      ) as {
+        id: string;
+        tfa_required: boolean;
+      };
+      if (tfa_required) throw new Error('TFA required');
       console.log(`User connected ${id}`);
       const socket_ids = new Set<string>(
         this.idUserToSocketIdMap.get(id) || [],

@@ -1,6 +1,5 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { gameDto } from './dto';
 
 @Injectable()
 export class GamesService {
@@ -12,13 +11,31 @@ export class GamesService {
     return games;
   }
 
-  async createGame(req: any, body: gameDto) {
-    const gameCreated = await this.prisma.game.create({
-      data: {
-        background: body.background,
-        player1_id: body.player1_id,
-        player2_id: body.player2_id,
+  async findOne(id: string) {
+    const game = await this.prisma.game.findUnique({
+      where: {
+        id,
+      },
+      select: {
+        id: true,
+        background: true,
+        player1: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+        player2: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
       },
     });
+    if (!game) throw new HttpException('Game not found', 404);
+    return game;
   }
 }

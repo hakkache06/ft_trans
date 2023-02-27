@@ -22,48 +22,28 @@ import {
   UnstyledButton,
   useMantineTheme,
   Text,
-  Divider,
-  ActionIcon,
-  Badge,
   Modal,
   Loader,
   Button,
 } from "@mantine/core";
 import {
-  IconCheck,
   IconChevronLeft,
   IconChevronRight,
-  IconHeartHandshake,
   IconHome2,
-  IconHourglass,
   IconLogout,
   IconMessages,
-  IconPingPong,
   IconUserCircle,
-  IconX,
 } from "@tabler/icons-react";
 import { io, Socket } from "socket.io-client";
 import { Loading } from "./components/Loading";
 import { toast } from "react-hot-toast";
-import { UserAvatar } from "./app/Room";
 import { useUsers, useAuth, useQueue } from "./stores";
-import { ModalsProvider, openContextModal } from "@mantine/modals";
+import { ModalsProvider } from "@mantine/modals";
 import { NewGame } from "./components/Games/New";
+import Friends from "./components/Friends";
 
 const routes = [
   { icon: IconHome2, label: "Home", to: "/" },
-  // {
-  //   icon: IconPingPong,
-  //   label: "New Game",
-  //   onClick: () =>
-  //     openContextModal({
-  //       modal: "NewGame",
-  //       title: "Start a New Game",
-  //       centered: true,
-  //       transitionDuration: 200,
-  //       innerProps: {},
-  //     }),
-  // },
   { icon: IconMessages, label: "Chat", to: "/chat" },
 ];
 
@@ -140,120 +120,6 @@ function NavbarLink({
   );
 }
 
-const Friends = () => {
-  const [friends, pending, online] = useUsers((state) => [
-    state.friends,
-    state.pending,
-    state.online,
-  ]);
-
-  useEffect(() => {}, []);
-
-  const remove = (id: string) => {
-    toast.promise(api.delete(`friends/${id}`), {
-      loading: "Removing friend",
-      success: "Friend removed",
-      error: "Failed to remove friend",
-    });
-  };
-
-  const accept = (id: string) => {
-    toast.promise(api.post(`friends/accept/${id}`), {
-      loading: "Accepting friend request",
-      success: "Friend request accepted",
-      error: "Failed to accept friend request",
-    });
-  };
-
-  return (
-    <>
-      <Divider
-        my="xs"
-        variant="dotted"
-        labelPosition="center"
-        label={
-          <>
-            <IconHourglass size={12} />
-            <Box ml={5}>Pending requests</Box>
-          </>
-        }
-      />
-      {pending.length ? (
-        pending.map((user) => (
-          <div
-            className="hover:bg-[#f8f9fa] p-2.5 rounded-[4px] select-none"
-            key={user.id}
-          >
-            <div className="flex gap-4 items-center">
-              <UserAvatar user={user} />
-              <div className="flex-grow truncate font-medium text-sm">
-                {user.name}
-              </div>
-              <div className="flex gap-2">
-                <ActionIcon
-                  onClick={() => accept(user.id)}
-                  variant="light"
-                  color="green"
-                >
-                  <IconCheck size={18} />
-                </ActionIcon>
-                <ActionIcon
-                  onClick={() => remove(user.id)}
-                  variant="light"
-                  color="red"
-                >
-                  <IconX size={18} />
-                </ActionIcon>
-              </div>
-            </div>
-          </div>
-        ))
-      ) : (
-        <small className="text-center my-6">No pending requests</small>
-      )}
-      <Divider
-        my="xs"
-        variant="dotted"
-        labelPosition="center"
-        label={
-          <>
-            <IconHeartHandshake size={12} />
-            <Box ml={5}>Your friends</Box>
-          </>
-        }
-      />
-      {friends.length ? (
-        friends.map((user) => (
-          <div
-            className="hover:bg-[#f8f9fa] p-2.5 rounded-[4px] select-none"
-            key={user.id}
-          >
-            <div className="flex gap-4 items-center">
-              <UserAvatar user={user} />
-              <div className="flex-grow truncate font-medium text-sm">
-                {user.name}
-              </div>
-              <div className="flex gap-2">
-                {online.includes(user.id) ? (
-                  <Badge color="teal" variant="dot">
-                    Online
-                  </Badge>
-                ) : (
-                  <Badge color="gray" variant="dot">
-                    Offline
-                  </Badge>
-                )}
-              </div>
-            </div>
-          </div>
-        ))
-      ) : (
-        <small className="text-center my-6">No friends yet :(</small>
-      )}
-    </>
-  );
-};
-
 function Layout({ user }: { user: any }) {
   const theme = useMantineTheme();
   const { pathname } = useLocation();
@@ -315,7 +181,6 @@ function Layout({ user }: { user: any }) {
                   key={link.label}
                   active={link.to === currentRoute}
                   to={link.to}
-                  onClick={link.onClick}
                 />
               ))}
             </Stack>
