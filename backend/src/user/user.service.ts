@@ -10,19 +10,20 @@ export class UserService {
 
   //Fetch user By name (?)
   async fetchAlluser(search: string) {
-    try {
-      const fetch = await this.prisma.user.findMany({
-          where: {
-            name: {
-              contains: search,
-            }
-          }
-      });
-      if (fetch) return fetch;
-      else return { meassgae: `Error fetchAlluser` };
-    } catch (e) {
-      if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;
-    }
+    return await this.prisma.user.findMany({
+      where: {
+        name: {
+          contains: search,
+          mode: 'insensitive',
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        avatar: true,
+      },
+      take: 10,
+    });
   }
 
   getProfile(id: string) {

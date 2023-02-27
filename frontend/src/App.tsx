@@ -41,7 +41,7 @@ import { useUsers, useAuth } from "./stores";
 
 const routes: any[] = [
   { icon: IconHome2, label: "Home", to: "/" },
-  { icon: IconPingPong, label: "Games", to: "/games" },
+  { icon: IconPingPong, label: "New Game", to: "/games/new" },
   { icon: IconMessages, label: "Chat", to: "/chat" },
 ];
 
@@ -237,9 +237,11 @@ function Layout({ user }: { user: any }) {
   const { pathname } = useLocation();
   const { logout } = useAuth();
   const socket = useContext(SocketContext);
-  const [fetchFriends, setOnline, fetchBlocklist] = useUsers(
-    (state) => ([state.fetchFriends, state.setOnline, state.fetchBlocklist ])
-  );
+  const [fetchFriends, setOnline, fetchBlocklist] = useUsers((state) => [
+    state.fetchFriends,
+    state.setOnline,
+    state.fetchBlocklist,
+  ]);
 
   const currentRoute = "/" + (pathname + "/").split("/")[1];
 
@@ -252,7 +254,7 @@ function Layout({ user }: { user: any }) {
       .on("users:friends", () => fetchFriends())
       .on("users:blocklist", () => fetchBlocklist());
     return () => {
-      old.off("users:online").off("users:friends").off("users:blocklist")
+      old.off("users:online").off("users:friends").off("users:blocklist");
     };
   }, [socket]);
 

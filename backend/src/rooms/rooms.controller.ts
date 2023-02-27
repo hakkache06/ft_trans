@@ -54,7 +54,8 @@ export class RoomsController {
     @Req() req: Request,
     @Body() body: UpdateRoomDto,
   ) {
-    return this.roomsService.update(idRoom, req.user.id, body);
+    await this.roomsService.verifyOwner(idRoom, req.user.id);
+    await this.roomsService.update(idRoom, req.user.id, body);
   }
 
   @Post(':id/users')
@@ -64,7 +65,18 @@ export class RoomsController {
     @Req() req: Request,
     @Body() body: RoomWithPwd,
   ) {
-    return this.roomsService.joinRoom(idRoom, req.user.id, body?.password);
+    await this.roomsService.joinRoom(idRoom, req.user.id, body?.password);
+  }
+
+  @Post(':id/users/:user_id')
+  @UseGuards(JwtGuard)
+  async addToRoom(
+    @Param('id') idRoom: string,
+    @Param('user_id') idUser: string,
+    @Req() req: Request,
+  ) {
+    await this.roomsService.verifyAdmin(idRoom, req.user.id);
+    await this.roomsService.addToRoom(idRoom, idUser);
   }
 
   @Delete(':id/users/:user_id')
@@ -74,14 +86,14 @@ export class RoomsController {
     @Param('user_id') idUser: string,
     @Req() req: Request,
   ) {
-    this.roomsService.verifyAdmin(idRoom, req.user.id);
-    return this.roomsService.leaveRoom(idRoom, idUser);
+    await this.roomsService.verifyAdmin(idRoom, req.user.id);
+    await this.roomsService.leaveRoom(idRoom, idUser);
   }
 
   @Delete(':id/users')
   @UseGuards(JwtGuard)
   async leaveRoom(@Param('id') idRoom: string, @Req() req: Request) {
-    return this.roomsService.leaveRoom(idRoom, req.user.id);
+    await this.roomsService.leaveRoom(idRoom, req.user.id);
   }
 
   @UsePipes(new ValidationPipe())

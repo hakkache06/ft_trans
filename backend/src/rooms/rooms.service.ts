@@ -6,7 +6,7 @@ import { RoomsGateway } from 'src/shared/rooms.gateway';
 
 @Injectable()
 export class RoomsService {
-  constructor(private prisma: PrismaService, private gateway: RoomsGateway) { }
+  constructor(private prisma: PrismaService, private gateway: RoomsGateway) {}
 
   async dmUser(idUser: string, idUser2: string) {
     let commonRoom = (
@@ -105,7 +105,7 @@ export class RoomsService {
           {
             type: {
               in: ['protected', 'public'],
-            }
+            },
           },
           {
             RoomUser: {
@@ -221,6 +221,8 @@ export class RoomsService {
   }
 
   async joinRoom(idRoom: string, idUser: string, password?: string) {
+    if (!(await this.prisma.user.count({ where: { id: idUser } })))
+      throw new HttpException('User not found', 404);
     const checkIfBanned = await this.prisma.roomUser.findFirst({
       where: {
         user_id: idUser,
@@ -241,7 +243,7 @@ export class RoomsService {
       const checkPassword = await argon.verify(room.password, password);
       if (!checkPassword) throw new HttpException('Wrong password', 403);
     }
-    const roomUser = await this.prisma.roomUser.create({
+    await this.prisma.roomUser.create({
       data: {
         user_id: idUser,
         room_id: idRoom,
@@ -252,7 +254,28 @@ export class RoomsService {
       },
     });
     this.gateway.server.emit('room:updated');
-    return roomUser;
+  }
+
+  async addToRoom(idRoom: string, idUser: string) {
+    if (!(await this.prisma.user.count({ where: { id: idUser } })))
+      throw new HttpException('User not found', 404);
+    if (
+      await this.prisma.roomUser.count({
+        where: { user_id: idUser, room_id: idRoom },
+      })
+    )
+      throw new HttpException('User already in room', 403);
+    await this.prisma.roomUser.create({
+      data: {
+        user_id: idUser,
+        room_id: idRoom,
+        owner: false,
+        admin: false,
+        ban: false,
+        mute: null,
+      },
+    });
+    this.gateway.server.emit('room:updated');
   }
 
   async verifyAdmin(idRoom: string, user_id: any) {
@@ -290,8 +313,19 @@ export class RoomsService {
       where: { room_id: idRoom, user_id: idUser },
     });
     if (!user) throw new HttpException('User not found', 404);
-    if (user.owner)
-      throw new HttpException('User is the owner of the room', 403);
+    if (user.owner) {
+      const admins = await this.prisma.roomUser.findMany({
+        where: { room_id: idRoom, admin: true, user_id: { not: idUser } },
+      });
+      if (admins.length === 0)
+        throw new HttpException('Room must have another admin', 403);
+      await this.prisma.roomUser.update({
+        where: {
+          user_id_room_id: { user_id: admins[0].user_id, room_id: idRoom },
+        },
+        data: { owner: true },
+      });
+    }
     if (user.ban) throw new HttpException('User is banned from this room', 403);
     if (user.mute) throw new HttpException('User is muted in this room', 403);
     await this.prisma.roomUser.delete({

@@ -14,6 +14,7 @@ import {
   PasswordInput,
   ScrollArea,
   SegmentedControl,
+  Select,
   Text,
   TextInput,
   useMantineTheme,
@@ -33,6 +34,7 @@ import {
   IconHandOff,
   IconHandStop,
   IconListDetails,
+  IconLoader,
   IconMessagePlus,
   IconSend,
   IconSettings,
@@ -43,7 +45,14 @@ import {
   IconVolumeOff,
 } from "@tabler/icons-react";
 import { addMinutes, format } from "date-fns";
-import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Loading } from "../components/Loading";
@@ -149,6 +158,116 @@ function EditRoom({ room }: { room: Room }) {
 
       <ActionIcon onClick={() => setOpened(true)} variant="light">
         <IconSettings size={18} />
+      </ActionIcon>
+    </>
+  );
+}
+
+interface UserItem {
+  value: string;
+  label: string;
+  avatar: string;
+}
+
+interface ItemProps extends React.ComponentPropsWithoutRef<"div">, UserItem {}
+
+const SelectUser = forwardRef<HTMLDivElement, ItemProps>(
+  ({ avatar, label, ...others }: ItemProps, ref) => (
+    <div ref={ref} {...others}>
+      <Group noWrap>
+        <Avatar src={avatar} />
+        <Text size="sm">{label}</Text>
+      </Group>
+    </div>
+  )
+);
+
+function AddUser({ room }: { room: Room }) {
+  const [opened, setOpened] = useState(false);
+  const form = useForm({
+    initialValues: {
+      user_id: null,
+    },
+    validate: {
+      user_id: (value) => (!value ? "Please select a user" : null),
+    },
+  });
+  const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState<UserItem[]>([]);
+  const [search, setSearch] = useState("");
+
+  const onSubmit = (values: typeof form.values) => {
+    toast.promise(
+      api
+        .post(`rooms/${room.id}/users/${values.user_id}`, {
+          json: values,
+        })
+        .then(() => {
+          setOpened(false);
+        })
+        .catch(async (e) => {
+          form.setErrors({ user_id: (await e.response.json()).message });
+          throw e;
+        }),
+      {
+        loading: "Adding...",
+        success: <b>Added successfully!</b>,
+        error: <b>Adding failed</b>,
+      }
+    );
+  };
+
+  useEffect(() => {
+    setLoading(true);
+    api
+      .get("user", {
+        searchParams: {
+          search,
+        },
+      })
+      .json<User[]>()
+      .then((data) => {
+        setUsers(
+          data.map((v) => ({ avatar: v.avatar, value: v.id, label: v.name }))
+        );
+      })
+      .finally(() => setLoading(false));
+  }, [search]);
+
+  return (
+    <>
+      <Modal
+        opened={opened}
+        onClose={() => setOpened(false)}
+        title="Add member to room"
+        centered
+        overlayBlur={3}
+      >
+        <form onSubmit={form.onSubmit(onSubmit)}>
+          <Select
+            label="Select a user"
+            placeholder="Pick one"
+            searchable
+            onSearchChange={setSearch}
+            searchValue={search}
+            itemComponent={SelectUser}
+            nothingFound="No users found"
+            data={users}
+            rightSection={
+              loading ? (
+                <IconLoader className="animate-spin" size={14} />
+              ) : undefined
+            }
+            {...form.getInputProps("user_id")}
+          />
+          <Group mt="md">
+            <Button type="submit">Add member</Button>
+          </Group>
+        </form>
+      </Modal>
+
+      <ActionIcon onClick={() => setOpened(true)} variant="light">
+        <IconUserPlus size={18} />
       </ActionIcon>
     </>
   );
@@ -378,6 +497,7 @@ function RoomUsers({
         padding="xl"
         size="xl"
         position="right"
+        zIndex={400}
       >
         {room.RoomUser.map(({ user, mute: m, admin, owner, ban }) => (
           <Box
@@ -418,7 +538,7 @@ function RoomUsers({
                 currentUser.user.id != user.id &&
                 !owner && (
                   <div className="flex gap-2">
-                    {currentUser.admin && (
+                    {currentUser.owner && (
                       <ActionIcon
                         variant="light"
                         onClick={() => toggleAdmin(user.id, admin)}
@@ -642,7 +762,6 @@ function Room() {
 
   const loadRoom = useCallback(() => {
     setLoading(true);
-    setRoom(undefined);
     api
       .get(`rooms/${id}`)
       .json<Room>()
@@ -681,6 +800,7 @@ function Room() {
   };
 
   useEffect(() => {
+    setRoom(undefined);
     loadRoom();
     socket?.on("room:updated", loadRoom);
     return () => {
@@ -688,7 +808,7 @@ function Room() {
     };
   }, [id]);
 
-  if (loading) return <Loading className="w-full !h-auto" />;
+  if (loading && !room) return <Loading className="w-full !h-auto" />;
 
   if (!room)
     return (
@@ -729,6 +849,7 @@ function Room() {
         <span className="font-bold text-lg">{room.name}</span>
         <div className="flex gap-3">
           {currentUser?.owner && <EditRoom room={room} />}
+          {currentUser?.admin && <AddUser room={room} />}
           <RoomUsers room={room} currentUser={currentUser} />
           {room.type !== "dm" && (
             <ActionIcon onClick={leave} variant="light" color="red">
