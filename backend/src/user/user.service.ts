@@ -103,4 +103,38 @@ export class UserService {
       if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;
     }
   }
+
+
+  getFilePath(type: number): string {
+    let filePath = `/goinfre/yhakkach/ft_trans/backend/achivement${type}.png`;
+    if (type > 12) {
+      filePath = `/goinfre/yhakkach/ft_trans/backend/achivement${12}.png`;
+    } else if (type < 1) {
+      filePath = `/goinfre/yhakkach/ft_trans/backend/achivement${1}.png`;
+    }
+    return filePath;
+  }
+
+  async takeAchivement(req) {
+    try {
+      let count = 0;
+      const getScore = await this.prisma.user.findMany({
+        where: { id: req.user.id },
+        select: {
+          wins: true,
+        },
+      });
+      if (getScore) {
+        let score = getScore[0].wins;
+        while (score / 2 >= 2.5) {
+          count++;
+          score /= 2;
+        }
+        return this.getFilePath(count);
+      }
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;
+    }
+  }
+  
 }

@@ -77,4 +77,11 @@ export class UserController {
   gethistoryMatch(@Req() req: Request) {
     return this.userService.gethistoryMatch(req);
   }
+
+  @Get('achivement/:id')
+@UseGuards(JwtGuard)
+takeAchivement(@Req() req: Request) {
+  return this.userService.takeAchivement(req);
+}
+
 }
