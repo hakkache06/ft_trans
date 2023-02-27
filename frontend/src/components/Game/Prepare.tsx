@@ -59,6 +59,10 @@ function drawBall(
   ctx.fillStyle = ball.color;
   ctx.arc(ball.x, ball.y, ball.radius, 0, 2 * Math.PI);
   ctx.fill();
+  ctx.strokeStyle = "BLACK";
+  ctx.lineWidth = 2;
+  ctx.arc(ball.x, ball.y, ball.radius, 0, 2 * Math.PI);
+  ctx.stroke();
   ctx.closePath();
 }
 
