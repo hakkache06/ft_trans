@@ -72,7 +72,7 @@ export class UserController {
     return { url: process.env.FILES_URL + file.filename };
   }
 
-  @Get(':id')
+  @Get('history/:id')
   @UseGuards(JwtGuard)
   gethistoryMatch(@Req() req: Request) {
     return this.userService.gethistoryMatch(req);
@@ -83,5 +83,12 @@ export class UserController {
 takeAchivement(@Req() req: Request) {
   return this.userService.takeAchivement(req);
 }
+
+@Get('Statistic/:id')
+@UseGuards(JwtGuard)
+getStatistic(@Req() req: Request) {
+  return this.userService.getStatistic(req);
+}
+
 
 }
