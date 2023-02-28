@@ -13,8 +13,8 @@ export function createBall(canvas: HTMLCanvasElement): Ball {
   let ball: Ball = {
     x: canvas.width / 2,
     y: canvas.height / 2,
-    radius: 15,
-    speed: 30,
+    radius: 20,
+    speed: 50,
     velocityX: 0,
     velocityY: 0,
     color: "WHITE",

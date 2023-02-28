@@ -10,7 +10,7 @@ export class UserService {
 
   //Fetch user By name (?)
   async fetchAlluser(search: string) {
-    return await this.prisma.user.findMany({
+    return await this.prisma.User.findMany({
       where: {
         name: {
           contains: search,
@@ -28,7 +28,7 @@ export class UserService {
 
   getProfile(id: string) {
     try {
-      const getProfile = this.prisma.user.findUnique({
+      const getProfile = this.prisma.User.findUnique({
         where: {
           id,
         },
@@ -42,7 +42,7 @@ export class UserService {
 
   async getOneUser(idUser: string) {
     try {
-      const fetchByid = await this.prisma.user.findUnique({
+      const fetchByid = await this.prisma.User.findUnique({
         where: {
           id: idUser,
         },
@@ -56,7 +56,7 @@ export class UserService {
 
   async updateUserbyId(idUser: string, b: UpdateUserDto) {
     if (
-      await this.prisma.user.findFirst({
+      await this.prisma.User.findFirst({
         where: {
           id: {
             not: idUser,
@@ -66,7 +66,7 @@ export class UserService {
       })
     )
       throw new HttpException('Name already exists', 400);
-    await this.prisma.user.update({
+    await this.prisma.User.update({
       where: {
         id: idUser,
       },
@@ -76,7 +76,7 @@ export class UserService {
 
   async deleteUserbyId(idUser: string) {
     try {
-      const deleteByid = await this.prisma.user.delete({
+      const deleteByid = await this.prisma.User.delete({
         where: {
           id: idUser,
         },
@@ -90,15 +90,63 @@ export class UserService {
 
   async gethistoryMatch(req) {
     try {
-      const history = await this.prisma.game.findMany({
-        where: { player1_id: req.user.id },
-        select: {
-          player1_id: true,
-          player2_id: true,
-        },
+      const history = await this.prisma.Game.findMany({
+        where: { player1_id: req.user.id},
+        select :{
+            id: true,
+        }
       });
       if (history) return history;
       else throw new BadRequestException('  not have any Match History');
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;
+    }
+  }
+
+  getFilePath(type: number): string {
+    let filePath = `/goinfre/yhakkach/ft_trans/backend/achivement${type}.png`;
+    if (type > 12) {
+      filePath = `/goinfre/yhakkach/ft_trans/backend/achivement${12}.png`;
+    } else if (type < 1) {
+      filePath = `/goinfre/yhakkach/ft_trans/backend/achivement${1}.png`;
+    }
+    return filePath;
+  }
+
+  async takeAchivement(req) {
+    try {
+      let count = 0;
+      const getScore = await this.prisma.User.findMany({
+        where: { id: req.user.id },
+        select: {
+          wins: true,
+        },
+      });
+      if (getScore) {
+        let score = getScore[0].wins;
+        while (score / 2 >= 2.5) {
+          count++;
+          score /= 2;
+        }
+        return this.getFilePath(count);
+      }
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;
+    }
+  }
+
+  async getStatistic(req) {
+    try {
+      const Statistic = await this.prisma.User.findMany({
+        where: { id: req.user.id },
+        select: {
+          xp: true,
+          wins: true,
+          loses: true,
+        },
+      });
+      if (Statistic) return Statistic;
+      else throw new BadRequestException('user not exist ');
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;
     }

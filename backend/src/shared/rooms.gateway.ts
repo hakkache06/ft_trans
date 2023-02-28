@@ -173,8 +173,8 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return { done: true };
   }
 
-  @SubscribeMessage('game:join')
-  async joinGame(@ConnectedSocket() client: Socket) {
+  @SubscribeMessage('game:queue')
+  async joinLobby(@ConnectedSocket() client: Socket) {
     if (this.games.size === 0) return { done: false };
     const [id, options] = this.games.entries().next().value;
     const player1_id = this.fetchUser(id);
@@ -265,28 +265,87 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // }
 
   @SubscribeMessage('game:move')
-  async move(@MessageBody() payload: any, @ConnectedSocket() client: Socket) {
-    const user = this.fetchUser(client.id);
-    // if (client.data.role == 'player')
-      this.server.to(payload.room).emit('moved', { y: payload.y });
+  async move(
+    @MessageBody() payload: { y: number; game: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (
+      !client.rooms.has(payload.game) ||
+      !(client.data.role == 'player1' || client.data.role == 'player2')
+    )
+      return;
+    this.server
+      .to(payload.game)
+      .emit('game:moved', { player: client.data.role, y: payload.y });
   }
 
-  // @SubscribeMessage('game:score')
-  // async score(@MessageBody() payload: any, @ConnectedSocket() client: Socket) {
-  //   const user = this.fetchUser(client.id);
-  //   this.server.to(payload.room).emit('scored', { player: user });
-  // }
+  @SubscribeMessage('game:ball')
+  async ball(
+    @MessageBody() payload: { x: number; y: number; game: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!client.rooms.has(payload.game) || client.data.role !== 'player1')
+      return;
+    this.server
+      .to(payload.game)
+      .emit('game:ball', { x: payload.x, y: payload.y });
+  }
 
-  // @SubscribeMessage('game:join')
-  // async watchGame(
-  //   @MessageBody() payload: any,
-  //   @ConnectedSocket() client: Socket,
-  // ) {
-  //   client.data.role = this.playerSocket(client.id)
-  //     ? (client.data.role = 'player')
-  //     : (client.data.role = 'watcher');
-  //   client.join(payload.room_id);
-  // }
+  @SubscribeMessage('game:score')
+  async score(
+    @MessageBody()
+    payload: {
+      game: string;
+      player1: number;
+      player2: number;
+    },
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!client.rooms.has(payload.game) || client.data.role !== 'player1')
+      return;
+    if (payload.player1 >= 5 || payload.player2 >= 5) {
+      this.server.to(payload.game).emit('game:over');
+      return;
+    }
+    this.server.to(payload.game).emit('game:score', {
+      player1: payload.player1,
+      player2: payload.player2,
+    });
+    await this.prisma.game.update({
+      where: { id: payload.game },
+      data: {
+        player1_score: payload.player1,
+        player2_score: payload.player2,
+      },
+    });
+  }
+
+  @SubscribeMessage('game:join')
+  async joinGame(
+    @MessageBody() payload: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const user = this.fetchUser(client.id);
+    const game = await this.prisma.game.findUnique({
+      where: { id: payload },
+    });
+    if (game.player1_id === user || game.player2_id === user) {
+      client.data.role = game.player1_id === user ? 'player1' : 'player2';
+    } else {
+      client.data.role = 'watcher';
+    }
+    console.log('join', payload, client.data.role);
+    client.join(payload);
+  }
+
+  @SubscribeMessage('game:leave')
+  async leaveGame(
+    @MessageBody() payload: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    // if (client.data.role === 'player1')
+    client.leave(payload);
+  }
 
   // async endGame(room_id: string) {
   //   const socketsInMyRoom = this.server.sockets.adapter.rooms[room_id];

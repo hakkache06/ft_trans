@@ -50,7 +50,7 @@ function Game() {
           </div>
         </div>
       </div>
-      <Table />
+      <Table game={game} />
       <div className="flex justify-between items-center mb-4"></div>
     </>
   );

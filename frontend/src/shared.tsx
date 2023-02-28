@@ -26,7 +26,6 @@ export const types = {
 
 export const backgrounds = [
   "/backgrounds/1.jpeg",
-  "/backgrounds/3.png",
-  "/backgrounds/1.jpeg",
+  "/backgrounds/2.jpeg",
   "/backgrounds/3.png",
 ];

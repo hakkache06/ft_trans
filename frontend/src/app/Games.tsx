@@ -24,7 +24,7 @@ function Games() {
     try {
       await socket
         .timeout(10000)
-        .emitWithAck("game:join")
+        .emitWithAck("game:queue")
         .then((data) => {
           if (!data.done) throw new Error("Could not find a game");
           return data;

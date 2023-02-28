@@ -5,6 +5,7 @@ import { PrismaClient } from '@prisma/client';
 @Injectable()
 export class PrismaService extends PrismaClient {
   User: any;
+  Game: any;
   constructor(config: ConfigService) {
     // call constructor of prismaClent
     super({
