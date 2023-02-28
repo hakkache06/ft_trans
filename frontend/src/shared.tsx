@@ -25,7 +25,10 @@ export const types = {
 };
 
 export const backgrounds = [
-  "/backgrounds/1.jpeg",
-  "/backgrounds/2.jpeg",
-  "/backgrounds/3.png",
+  "/backgrounds/0.jpg",
+  "/backgrounds/1.jpg",
+  "/backgrounds/2.jpg",
+  "/backgrounds/3.jpg",
+  "/backgrounds/4.jpg",
+  "/backgrounds/5.jpg",
 ];

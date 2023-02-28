@@ -171,14 +171,13 @@ function Table({ game }: { game: Game }) {
       setTimeout(() => {
         ball.stop = false;
       }, 2000);
-    } else if (collision(ball, player1) || collision(ball, player2)) {
-      ball.velocityX *= -1.05;
     }
+    else if (collision(ball, player1) || collision(ball, player2)) {ball.velocityX *= -1.01; ball.velocityY *= 1.10;}
     if (ball.y >= canvas.height || ball.y <= 0) ball.velocityY *= -1;
-    if (ball.velocityX >= 20) ball.velocityX = 20;
-    else if (ball.velocityX <= -20) ball.velocityX = -20;
-    if (ball.velocityY >= 20) ball.velocityY = 20;
-    else if (ball.velocityY <= -20) ball.velocityY = -20;
+    if (ball.velocityX >= 20) ball.velocityX = Math.random() * 20;
+    else if (ball.velocityX <= -20) ball.velocityX = -1 * Math.random() * 20;
+    if (ball.velocityY >= 30) ball.velocityY = 30;
+    else if (ball.velocityY <= -30) ball.velocityY = -30;
     socket?.emit("game:ball", { game: game.id, x: ball.x, y: ball.y });
   }
 
@@ -189,7 +188,7 @@ function Table({ game }: { game: Game }) {
 
   return (
     <div className="game-container shadow-2xl mx-auto">
-      <canvas ref={ref} id="pong" width="1920" height="1080"></canvas>
+      <canvas ref={ref} id="pong" width="1800" height="1200"></canvas>
     </div>
   );
 }
