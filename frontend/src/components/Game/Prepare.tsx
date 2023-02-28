@@ -74,7 +74,7 @@ function drawScore(
 ) {
   ctx.beginPath();
   ctx.fillStyle = player.color;
-  ctx.font = "400% fantasy";
+  ctx.font = "350% cursive";
   if (left === true)
     ctx.fillText(
       player.score.toString(),

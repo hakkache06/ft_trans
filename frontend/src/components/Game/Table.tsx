@@ -33,20 +33,20 @@ function throttle(cb: Function, delay = 1000) {
   };
 }
 
-function collision(ball: Ball, player: Player): boolean {
-  const b_top = ball.y - ball.radius;
-  const b_bottom = ball.y + ball.radius;
-  const b_left = ball.x - ball.radius;
-  const b_right = ball.x + ball.radius;
+function    collision(ball: Ball, player: Player, one: boolean): boolean
+{
+  const   b_top = ball.y - ball.radius;
+  const   b_bottom = ball.y + ball.radius;
+  const   b_left = ball.x - ball.radius;
+  const   b_right = ball.x + ball.radius;
 
-  const p_top = player.y;
-  const p_bottom = player.y + player.height;
-  const p_left = player.x;
-  const p_right = player.x + player.width;
+  const   p_top = player.y;
+  const   p_bottom = player.y + player.height;
+  const   p_right = player.x + player.width;
+  const   p_left = player.x;
 
-  return (
-    b_right > p_left && b_bottom > p_top && b_left < p_right && b_top < p_bottom
-  );
+  if (one) return (b_bottom >= p_top && b_left <= p_right && b_top <= p_bottom);
+  return (b_bottom >= p_top && b_right >= p_left && b_top <= p_bottom);
 }
 
 function Table({ game }: { game: Game }) {
@@ -153,8 +153,9 @@ function Table({ game }: { game: Game }) {
       ball.x += ball.velocityX;
       ball.y += ball.velocityY;
     }
-    if (ball.x >= canvas.width || ball.x <= 0) {
-      if (ball.x <= 0) player2.score++;
+    if (ball.x >= player2.x || ball.x <= player1.x + player1.width)
+    {
+      if (ball.x <= player1.x + player1.width) player2.score++;
       else player1.score++;
       socket?.emit("game:score", {
         game: game.id,
@@ -172,7 +173,7 @@ function Table({ game }: { game: Game }) {
         ball.stop = false;
       }, 2000);
     }
-    else if (collision(ball, player1) || collision(ball, player2)) {ball.velocityX *= -1.01; ball.velocityY *= 1.10;}
+    else if (collision(ball, player1, true) || collision(ball, player2, false)) {ball.velocityX *= -1.01; ball.velocityY *= 1.10;}
     if (ball.y >= canvas.height || ball.y <= 0) ball.velocityY *= -1;
     if (ball.velocityX >= 20) ball.velocityX = Math.random() * 20;
     else if (ball.velocityX <= -20) ball.velocityX = -1 * Math.random() * 20;
