@@ -92,16 +92,26 @@ export class UserService {
     try {
       const history = await this.prisma.game.findMany({
         where: {
-          player1_id: req.user.id,
+          OR: [
+            {
+              player1_id: req.user.id,
+            },
+            {
+              player2_id: req.user.id,
+            },
+          ],
         },
         select: {
+
           player1_score: true,
           player2_score: true,
+
           player1: {
             select: {
               name: true,
             },
           },
+
           player2: {
             select: {
               name: true,
