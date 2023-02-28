@@ -102,7 +102,6 @@ export class UserService {
           ],
         },
         select: {
-
           player1_score: true,
           player2_score: true,
 
