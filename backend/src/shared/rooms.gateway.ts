@@ -264,12 +264,12 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   //   this.players.shift();
   // }
 
-  // @SubscribeMessage('game:move')
-  // async move(@MessageBody() payload: any, @ConnectedSocket() client: Socket) {
-  //   const user = this.fetchUser(client.id);
-  //   if (client.data.role == 'player')
-  //     this.server.to(payload.room).emit('moved', { player: user });
-  // }
+  @SubscribeMessage('game:move')
+  async move(@MessageBody() payload: any, @ConnectedSocket() client: Socket) {
+    const user = this.fetchUser(client.id);
+    // if (client.data.role == 'player')
+      this.server.to(payload.room).emit('moved', { y: payload.y });
+  }
 
   // @SubscribeMessage('game:score')
   // async score(@MessageBody() payload: any, @ConnectedSocket() client: Socket) {
