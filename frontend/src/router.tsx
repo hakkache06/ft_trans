@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 import App from "./App";
+import Ai from "./app/Ai";
 import Chat from "./app/Chat";
 import Game from "./app/Game";
 import Games from "./app/Games";
@@ -19,6 +20,10 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <Games />,
+      },
+      {
+        path: "/game/ai",
+        element: <Ai />,
       },
       {
         path: "/game/:id",

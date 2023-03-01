@@ -49,12 +49,14 @@ export default function Table({
   personColor = "#FFFFFF",
   aiColor = "#FFFFFF",
   ballColor = "#FFFFFF",
+  level = 0,
 }: {
-  game: Game;
+  game?: Game;
   role: "player1" | "player2" | "watcher";
   personColor?: string;
   aiColor?: string;
   ballColor?: string;
+  level?: number;
 }) {
   const socket = useContext(SocketContext);
   const [state, setState] = useState<{
@@ -65,7 +67,7 @@ export default function Table({
   }>();
 
   const move = throttle((y: number) => {
-    socket?.emit("game:move", { game: game.id, y });
+    if (game) socket?.emit("game:move", { game: game.id, y });
   }, 1000 / FPS);
 
   const moveRacket = (player: "player1" | "player2", y: number) => {
@@ -144,11 +146,12 @@ export default function Table({
       ball.velocityX = -1 * Math.random() * ball.maxX;
     if (ball.velocityY >= ball.maxY) ball.velocityY = ball.maxY;
     else if (ball.velocityY <= -ball.maxY) ball.velocityY = -ball.maxY;
-    socket?.emit("game:ball", { game: game.id, x: ball.x, y: ball.y });
+    if (game)
+      socket?.emit("game:ball", { game: game.id, x: ball.x, y: ball.y });
   }
 
   const onVisibilityChange = useCallback(() => {
-    if (document.hidden && (role === "player1" || role === "player2"))
+    if (game && document.hidden && (role === "player1" || role === "player2"))
       socket?.emit("game:leave", game.id);
   }, [game]);
 
@@ -223,7 +226,7 @@ export default function Table({
       reverseColor: getReverse(personColor),
       score: game?.player1_score || 0,
       ai: 0,
-      aiStep: 1.1,
+      aiStep: 0,
     };
     const player2: Player = {
       width: canvas.width - (99 * canvas.width) / 100,
@@ -233,8 +236,8 @@ export default function Table({
       color: aiColor,
       reverseColor: getReverse(aiColor),
       score: game?.player2_score || 0,
-      ai: game ? 0 : 8, //ai level from 1 to 20
-      aiStep: 1.1,
+      ai: game ? 0 : level, //ai level from 1 to 20
+      aiStep: 1.5,
     };
     setState({ ctx, ball, player1, player2 });
   }, []);
