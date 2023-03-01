@@ -8,6 +8,7 @@ import {
   ConnectedSocket,
   MessageBody,
 } from '@nestjs/websockets';
+import { GameState } from '@prisma/client';
 import { IsNotEmpty } from 'class-validator';
 import { verify } from 'jsonwebtoken';
 import { Socket, Server } from 'socket.io';
@@ -31,10 +32,75 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       background: string;
     }
   > = new Map();
-  private players: Socket[] = [];
 
   @WebSocketServer() server: Server;
   constructor(private prisma: PrismaService) {}
+
+  emitOnlineUsers() {
+    this.server.emit('users:online', [...this.idUserToSocketIdMap.keys()]);
+  }
+
+  emitGameQueue(socket_id?: string) {
+    console.log('Emitting game queue', [...this.games.keys()]);
+    (socket_id ? this.server.to(socket_id) : this.server).emit('game:queue', [
+      ...this.games.keys(),
+    ]);
+  }
+
+  fetchUser(idClient: string) {
+    return [...this.idUserToSocketIdMap.keys()].find((id) =>
+      this.idUserToSocketIdMap.get(id).has(idClient),
+    );
+  }
+
+  handleConnection(client: Socket) {
+    console.log(`Connected ${client.id}`);
+    try {
+      const { id, tfa_required } = verify(
+        client.handshake.auth.token,
+        process.env.JWT_SECRET,
+      ) as {
+        id: string;
+        tfa_required: boolean;
+      };
+      if (tfa_required) throw new Error('TFA required');
+      console.log(`User connected ${id}`);
+      const socket_ids = new Set<string>(
+        this.idUserToSocketIdMap.get(id) || [],
+      );
+      socket_ids.add(client.id);
+      this.idUserToSocketIdMap.set(id, socket_ids);
+      this.emitOnlineUsers();
+      this.emitGameQueue(client.id);
+    } catch (err) {
+      console.error('Invalid token', err);
+      return client.disconnect();
+    }
+  }
+
+  async handleDisconnect(client: Socket) {
+    console.log(`Disconnected: ${client.id}`);
+    if (this.games.has(client.id)) this.games.delete(client.id);
+
+    const idUser = this.fetchUser(client.id);
+    if (!idUser) return;
+
+    this.idUserToSocketIdMap.get(idUser).delete(client.id);
+    if (this.idUserToSocketIdMap.get(idUser).size === 0)
+      this.idUserToSocketIdMap.delete(idUser);
+    this.emitOnlineUsers();
+    await this.verifyGames();
+  }
+
+  @SubscribeMessage('room:join')
+  async joinRoom(
+    @MessageBody() payload: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const idUser = this.fetchUser(client.id);
+    console.log(`User ${idUser} joined room : ${payload}`);
+    client.join(payload);
+  }
 
   @SubscribeMessage('room:message:send')
   async handleEvent(
@@ -67,73 +133,6 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     };
   }
 
-  fetchUser(idClient: string) {
-    const idUser = [...this.idUserToSocketIdMap.keys()].find((id) => {
-      console.log(id, idClient, this.idUserToSocketIdMap.get(id));
-      return this.idUserToSocketIdMap.get(id).has(idClient);
-    });
-    return idUser;
-  }
-
-  handleDisconnect(client: Socket) {
-    console.log(`Disconnected: ${client.id}`);
-    if (this.games.has(client.id)) this.games.delete(client.id);
-
-    const idUser = this.fetchUser(client.id);
-    if (!idUser) return;
-
-    this.idUserToSocketIdMap.get(idUser).delete(client.id);
-    if (this.idUserToSocketIdMap.get(idUser).size === 0)
-      this.idUserToSocketIdMap.delete(idUser);
-    this.emitOnlineUsers();
-  }
-
-  emitOnlineUsers() {
-    this.server.emit('users:online', [...this.idUserToSocketIdMap.keys()]);
-  }
-
-  emitGameQueue(socket_id?: string) {
-    console.log('Emitting game queue', [...this.games.keys()]);
-    (socket_id ? this.server.to(socket_id) : this.server).emit('game:queue', [
-      ...this.games.keys(),
-    ]);
-  }
-
-  handleConnection(client: Socket) {
-    console.log(`Connected ${client.id}`);
-    try {
-      const { id, tfa_required } = verify(
-        client.handshake.auth.token,
-        process.env.JWT_SECRET,
-      ) as {
-        id: string;
-        tfa_required: boolean;
-      };
-      if (tfa_required) throw new Error('TFA required');
-      console.log(`User connected ${id}`);
-      const socket_ids = new Set<string>(
-        this.idUserToSocketIdMap.get(id) || [],
-      );
-      socket_ids.add(client.id);
-      this.idUserToSocketIdMap.set(id, socket_ids);
-      this.emitOnlineUsers();
-      this.emitGameQueue(client.id);
-    } catch (err) {
-      console.error('Invalid token', err);
-      return client.disconnect();
-    }
-  }
-
-  @SubscribeMessage('room:join')
-  async joinRoom(
-    @MessageBody() payload: string,
-    @ConnectedSocket() client: Socket,
-  ) {
-    const idUser = this.fetchUser(client.id);
-    console.log(`User ${idUser} joined room : ${payload}`);
-    client.join(payload);
-  }
-
   @SubscribeMessage('room:leave')
   async leaveRoom(
     @MessageBody() payload: any,
@@ -164,7 +163,11 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const [id, options] = this.games.entries().next().value;
     const player1_id = this.fetchUser(id);
     const player2_id = this.fetchUser(client.id);
-    if (player1_id === player2_id) return { done: false };
+    // if (player1_id === player2_id) return { done: false };
+    for (const id of this.games.keys()) {
+      if (this.fetchUser(id) === player1_id) this.games.delete(id);
+      if (this.fetchUser(id) === player2_id) this.games.delete(id);
+    }
     this.games.delete(id);
     this.emitGameQueue();
     const game = await this.prisma.game.create({
@@ -188,63 +191,24 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return { done: true };
   }
 
-  // @SubscribeMessage('game:queue')
-  // async joinLobby(
+  // @SubscribeMessage('game:invite')
+  // async inviteToGame(
   //   @MessageBody() payload: any,
   //   @ConnectedSocket() client: Socket,
   // ) {
+  //   // if (this.players.every((p) => p.connected)) {
   //   this.players.push(client);
-  //   if (this.players.length >= 2) {
-  //     // if (this.players.every((p) => p.connected)) {
-  //     this.players[0].data.role = 'player';
-  //     this.players[1].data.role = 'player';
-  //     const user1 = this.fetchUser(this.players[0].id);
-  //     const user2 = this.fetchUser(this.players[1].id);
-  //     this.server.emit('matched', {
-  //       player1: user1,
-  //       player2: user2,
-  //     });
-  //     this.startGame();
-  //     // } else {
-  //     //   return 'User not connected';
-  //     // }
-  //   }
-  // }
-
-  @SubscribeMessage('game:invite')
-  async inviteToGame(
-    @MessageBody() payload: any,
-    @ConnectedSocket() client: Socket,
-  ) {
-    if (!payload.socket_id.connected) throw new Error('User not online');
-    client.to(payload.socket_id).emit('game:requested');
-  }
-
-  @SubscribeMessage('game:accepted')
-  async acceptGame(
-    @MessageBody() payload: any,
-    @ConnectedSocket() client: Socket,
-  ) { 
-    client.emit('game:queue');
-    payload.emit('game:queue');
-  }
-
-  // async startGame() {
+  //   this.players.push(payload.opponent);
+  //   this.players[0].data.role = 'player';
+  //   this.players[1].data.role = 'player';
   //   const user1 = this.fetchUser(this.players[0].id);
   //   const user2 = this.fetchUser(this.players[1].id);
-  //   const game_room = await this.prisma.game.create({
-  //     data: {
-  //       background: 'default',
-  //       player1_id: user1,
-  //       player2_id: user2,
-  //     },
+  //   this.server.emit('matched', {
+  //     player1: user1,
+  //     player2: user2,
   //   });
-
-  //   this.players[0].join(game_room.id);
-  //   this.players[1].join(game_room.id);
-
-  //   this.players.shift();
-  //   this.players.shift();
+  //   this.startGame();
+  //   // }
   // }
 
   @SubscribeMessage('game:move')
@@ -257,9 +221,9 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       !(client.data.role == 'player1' || client.data.role == 'player2')
     )
       return;
-    this.server
+    client
       .to(payload.game)
-      .emit('game:moved', { player: client.data.role, y: payload.y });
+      .emit('game:move', { player: client.data.role, y: payload.y });
   }
 
   @SubscribeMessage('game:ball')
@@ -269,9 +233,17 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     if (!client.rooms.has(payload.game) || client.data.role !== 'player1')
       return;
-    this.server
-      .to(payload.game)
-      .emit('game:ball', { x: payload.x, y: payload.y });
+    client.to(payload.game).emit('game:ball', { x: payload.x, y: payload.y });
+  }
+
+  async endGame(game_id: string) {
+    this.server.to(game_id).emit('game:over');
+    const clients = await this.server.in(game_id).fetchSockets();
+    clients.forEach((client) => {
+      client.data.role = undefined;
+      client.data.game = undefined;
+      client.leave(game_id);
+    });
   }
 
   @SubscribeMessage('game:score')
@@ -286,11 +258,11 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     if (!client.rooms.has(payload.game) || client.data.role !== 'player1')
       return;
-    if (payload.player1 >= 5 || payload.player2 >= 5) {
-      this.server.to(payload.game).emit('game:over');
+    if (payload.player1 >= 10 || payload.player2 >= 10) {
+      this.endGame(payload.game);
       return;
     }
-    this.server.to(payload.game).emit('game:score', {
+    client.to(payload.game).emit('game:score', {
       player1: payload.player1,
       player2: payload.player2,
     });
@@ -309,16 +281,21 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
   ) {
     const user = this.fetchUser(client.id);
-    const game = await this.prisma.game.findUnique({
+    const game = await this.prisma.game.findUniqueOrThrow({
       where: { id: payload },
     });
+    if (game.state === GameState.finished) return 'watcher';
     if (game.player1_id === user || game.player2_id === user) {
-      client.data.role = game.player1_id === user ? 'player1' : 'player2';
+      let role = game.player1_id === user ? 'player1' : 'player2';
+      const clients = await this.server.in(payload).fetchSockets();
+      if (clients.find((c) => c.data.role === role)) role = 'watcher';
+      client.data.role = role;
     } else {
       client.data.role = 'watcher';
     }
-    console.log('join', payload, client.data.role);
+    client.data.game = payload;
     client.join(payload);
+    return client.data.role;
   }
 
   @SubscribeMessage('game:leave')
@@ -326,16 +303,48 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: string,
     @ConnectedSocket() client: Socket,
   ) {
-    // if (client.data.role === 'player1')
+    client.data.role = undefined;
+    client.data.game = undefined;
+    await this.verifyGames();
     client.leave(payload);
   }
 
-  // async endGame(room_id: string) {
-  //   const socketsInMyRoom = this.server.sockets.adapter.rooms[room_id];
-  //   if (socketsInMyRoom) {
-  //     socketsInMyRoom.forEach((socketId: Socket) => {
-  //       socketId.leave(room_id);
-  //     });
-  //   }
-  // }
+  async verifyGames() {
+    const liveGames = await this.prisma.game.findMany({
+      where: {
+        state: GameState.live,
+      },
+    });
+    for (const game of liveGames) {
+      if (
+        !this.isPlaying(game.player1_id, game.id) ||
+        !this.isPlaying(game.player2_id, game.id)
+      ) {
+        console.log('Player disconnected. Ending game.', game.id);
+        await this.prisma.game.update({
+          where: {
+            id: game.id,
+          },
+          data: {
+            state: GameState.finished,
+          },
+        });
+        this.server.to(game.id).emit('game:finished');
+        this.server.socketsLeave(game.id);
+      }
+    }
+  }
+
+  isPlaying(user_id: string, game_id: string) {
+    if (!this.idUserToSocketIdMap.has(user_id)) return false;
+    for (const socketId of this.idUserToSocketIdMap.get(user_id)) {
+      const socket = this.server.sockets.sockets.get(socketId);
+      if (
+        ['player1', 'player2'].includes(socket.data.role) &&
+        socket.data.game === game_id
+      )
+        return true;
+    }
+    return false;
+  }
 }

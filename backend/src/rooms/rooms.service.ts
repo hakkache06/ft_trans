@@ -323,7 +323,8 @@ export class RoomsService {
         where: {
           user_id_room_id: { user_id: admins[0].user_id, room_id: idRoom },
         },
-        data: { owner: true },
+        data: { owner: true, mute: null, ban: false },
+
       });
     }
     if (user.ban) throw new HttpException('User is banned from this room', 403);

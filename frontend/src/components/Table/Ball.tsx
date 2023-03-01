@@ -21,8 +21,8 @@ export function createBall(canvas: HTMLCanvasElement, ballColor: string, ballRev
     x: canvas.width / 2,
     y: canvas.height / 2,
     radius: 15,
-    speedX: 11, // 1 to 100
-    speedY: 11, // 1 to 100
+    speedX: 15, // 1 to 100
+    speedY: 10, // 1 to 100
     velocityX: 0,
     velocityY: 0,
     maxX: 20, // max speed X from 10 to 50
