@@ -75,21 +75,6 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return idUser;
   }
 
-  // playerSocket(idClient: string) {
-  //   const idUser = [...this.idUserToSocketIdMap.keys()].find((id) => {
-  //     console.log(id, idClient, this.idUserToSocketIdMap.get(id));
-  //     return this.idUserToSocketIdMap.get(id).has(idClient);
-  //   });
-  //   const socketPlayer = () => {
-  //     for (let socketId of this.idUserToSocketIdMap.get(idUser)) {
-  //       const socket = this.server.sockets.sockets.get(socketId);
-  //       if (socket.data.role == 'player') return true;
-  //     }
-  //     return false;
-  //   };
-  //   return socketPlayer;
-  // }
-
   handleDisconnect(client: Socket) {
     console.log(`Disconnected: ${client.id}`);
     if (this.games.has(client.id)) this.games.delete(client.id);
@@ -226,25 +211,23 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   //   }
   // }
 
-  // @SubscribeMessage('game:invite')
-  // async inviteToGame(
-  //   @MessageBody() payload: any,
-  //   @ConnectedSocket() client: Socket,
-  // ) {
-  //   // if (this.players.every((p) => p.connected)) {
-  //   this.players.push(client);
-  //   this.players.push(payload.opponent);
-  //   this.players[0].data.role = 'player';
-  //   this.players[1].data.role = 'player';
-  //   const user1 = this.fetchUser(this.players[0].id);
-  //   const user2 = this.fetchUser(this.players[1].id);
-  //   this.server.emit('matched', {
-  //     player1: user1,
-  //     player2: user2,
-  //   });
-  //   this.startGame();
-  //   // }
-  // }
+  @SubscribeMessage('game:invite')
+  async inviteToGame(
+    @MessageBody() payload: any,
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!payload.socket_id.connected) throw new Error('User not online');
+    client.to(payload.socket_id).emit('game:requested');
+  }
+
+  @SubscribeMessage('game:accepted')
+  async acceptGame(
+    @MessageBody() payload: any,
+    @ConnectedSocket() client: Socket,
+  ) { 
+    client.emit('game:queue');
+    payload.emit('game:queue');
+  }
 
   // async startGame() {
   //   const user1 = this.fetchUser(this.players[0].id);
