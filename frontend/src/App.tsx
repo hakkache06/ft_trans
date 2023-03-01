@@ -32,6 +32,8 @@ import {
   IconHome2,
   IconLogout,
   IconMessages,
+  IconRobot,
+  IconSettings,
   IconUserCircle,
 } from "@tabler/icons-react";
 import { io, Socket } from "socket.io-client";
@@ -44,6 +46,7 @@ import Friends from "./components/Friends";
 
 const routes = [
   { icon: IconHome2, label: "Home", to: "/" },
+  { icon: IconRobot, label: "Play with AI", to: "/game/ai" },
   { icon: IconMessages, label: "Chat", to: "/chat" },
 ];
 
@@ -123,7 +126,7 @@ function NavbarLink({
 function Layout({ user }: { user: any }) {
   const theme = useMantineTheme();
   const { pathname } = useLocation();
-  const { logout } = useAuth();
+  const { logout, id } = useAuth();
   const socket = useContext(SocketContext);
   const [fetchFriends, fetchBlocklist] = useUsers((state) => [
     state.fetchFriends,
@@ -188,10 +191,16 @@ function Layout({ user }: { user: any }) {
           <Navbar.Section>
             <Stack justify="center" spacing={0}>
               <NavbarLink
-                active={currentRoute === "/profile"}
-                to="/profile"
+                active={pathname === "/user/" + id}
+                to={"/user/" + id}
                 icon={IconUserCircle}
                 label="Profile"
+              />
+              <NavbarLink
+                active={currentRoute === "/profile"}
+                to="/profile"
+                icon={IconSettings}
+                label="Edit Profile"
               />
               <NavbarLink onClick={logout} icon={IconLogout} label="Logout" />
             </Stack>
@@ -202,7 +211,7 @@ function Layout({ user }: { user: any }) {
         <div className="hidden lg:block">
           <Aside p="md" hiddenBreakpoint="sm" width={{ sm: 200, lg: 300 }}>
             {user && (
-              <Link to={`/users/${user.id}`}>
+              <Link to={`/user/${user.id}`}>
                 <UnstyledButton
                   sx={{
                     display: "block",

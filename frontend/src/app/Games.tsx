@@ -1,12 +1,16 @@
 import { Button } from "@mantine/core";
 import { openContextModal } from "@mantine/modals";
 import { IconPingPong } from "@tabler/icons-react";
-import { useContext, useState } from "react";
-import { SocketContext } from "../utils";
+import { useCallback, useContext, useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import Game from "../components/Game";
+import { Loading } from "../components/Loading";
+import { api, SocketContext } from "../utils";
 
 function Games() {
   const socket = useContext(SocketContext);
   const [loading, setLoading] = useState(false);
+  const [games, setGames] = useState<Game[]>([]);
 
   const createGame = () =>
     openContextModal({
@@ -35,10 +39,31 @@ function Games() {
     setLoading(false);
   };
 
+  const loadGames = useCallback(() => {
+    setLoading(true);
+    api
+      .get("games")
+      .json<Game[]>()
+      .then((res) => setGames(res))
+      .catch(() => toast.error("Failed to load games"))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+    loadGames();
+    socket.on("games:updated", loadGames);
+    return () => {
+      socket.off("games:updated");
+    };
+  }, [socket]);
+
+  if (loading && !games.length) return <Loading className="w-full h-screen" />;
+
   return (
     <>
       <div className="flex justify-between items-center mb-4">
-        <h1 className="m-0">Games</h1>
+        <h1 className="m-0">Live Games</h1>
         <div className="flex gap-2">
           <Button
             loading={loading}
@@ -48,6 +73,11 @@ function Games() {
             New Game
           </Button>
         </div>
+      </div>
+      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {games.map((game) => (
+          <Game game={game} />
+        ))}
       </div>
     </>
   );

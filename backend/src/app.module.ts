@@ -7,7 +7,6 @@ import { RoomsModule } from './rooms/rooms.module';
 import { FriendsModule } from './friends/friends.module';
 import { GamesModule } from './games/games.module';
 import { MessagesModule } from './messages/messages.module';
-import { TestController } from './test/test.controller';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { SharedModule } from './shared/shared.module';
@@ -32,7 +31,7 @@ import { BlocklistModule } from './blocklist/blocklist.module';
     SharedModule,
     BlocklistModule,
   ],
-  controllers: [TestController],
+  controllers: [],
   providers: [],
 })
 export class AppModule {}

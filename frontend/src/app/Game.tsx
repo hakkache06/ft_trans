@@ -1,9 +1,11 @@
+import { CopyButton, Input } from "@mantine/core";
 import { useCallback, useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";
 import { Loading } from "../components/Loading";
 import Table from "../components/Table/Table";
 import { UserAvatar } from "../components/UserAvatar";
+import { useAuth } from "../stores";
 import { api, SocketContext } from "../utils";
 
 function Game() {
@@ -14,6 +16,7 @@ function Game() {
     null
   );
   const { id } = useParams<{ id: string }>();
+  const auth = useAuth();
   const navigate = useNavigate();
 
   const loadGame = useCallback(() => {
@@ -51,6 +54,11 @@ function Game() {
   if (loading || !game || (game.state === "live" && !role))
     return <Loading className="w-full h-screen" />;
 
+  const loss =
+    (game.player1_score < game.player2_score
+      ? game.player1.id
+      : game.player2.id) == auth.id;
+
   return (
     <>
       <div className="flex items-center gap-10 mb-4">
@@ -71,7 +79,11 @@ function Game() {
       {!role ? (
         <div
           className="aspect-[1.75] bg-no-repeat bg-center bg-cover shadow-2xl rounded-xl p-3 flex flex-col items-center justify-center text-4xl font-bold text-white w-full text-center"
-          style={{ backgroundImage: `url(${game.background})` }}
+          style={{
+            backgroundImage: `url(${
+              loss ? "/backgrounds/loss.gif" : game.background
+            })`,
+          }}
         >
           <h3>Game finished</h3>
           <h1 className="my-0">

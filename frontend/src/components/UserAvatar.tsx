@@ -94,7 +94,7 @@ export function UserAvatar({
       </Menu.Target>
 
       <Menu.Dropdown>
-        <Link to={`/users/${user.id}`}>
+        <Link to={`/user/${user.id}`}>
           <Menu.Item icon={<IconUserCircle size={14} />}>Profile</Menu.Item>
         </Link>
         {user.id !== auth.id && (

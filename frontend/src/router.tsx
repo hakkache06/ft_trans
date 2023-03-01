@@ -5,6 +5,7 @@ import Game from "./app/Game";
 import Games from "./app/Games";
 import Profile from "./app/Profile";
 import Room, { Welcome } from "./app/Room";
+import User from "./app/User";
 import Error from "./Error";
 import Login from "./guest/Login";
 import Tfa from "./guest/Tfa";
@@ -22,6 +23,10 @@ export const router = createBrowserRouter([
       {
         path: "/game/:id",
         element: <Game />,
+      },
+      {
+        path: "/user/:id",
+        element: <User />,
       },
       {
         path: "/chat",

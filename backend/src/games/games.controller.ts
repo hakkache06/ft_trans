@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { GamesService } from './games.service';
 import { JwtGuard } from 'src/auth/guards';
 
@@ -7,8 +7,9 @@ export class GamesController {
   constructor(private gamesService: GamesService) {}
 
   @Get('')
-  async getAllGames(@Req() req: Request) {
-    return this.gamesService.getAllGames(req);
+  @UseGuards(JwtGuard)
+  async getAllGames() {
+    return this.gamesService.getAllGames();
   }
 
   @Get(':id')

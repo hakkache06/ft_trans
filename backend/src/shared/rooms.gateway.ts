@@ -41,7 +41,6 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   emitGameQueue(socket_id?: string) {
-    console.log('Emitting game queue', [...this.games.keys()]);
     (socket_id ? this.server.to(socket_id) : this.server).emit('game:queue', [
       ...this.games.keys(),
     ]);
@@ -152,7 +151,6 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     console.log('Creating game', payload);
     this.games.set(client.id, payload);
-    client.emit('game:created');
     this.emitGameQueue();
     return { done: true };
   }
@@ -163,7 +161,7 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const [id, options] = this.games.entries().next().value;
     const player1_id = this.fetchUser(id);
     const player2_id = this.fetchUser(client.id);
-    // if (player1_id === player2_id) return { done: false };
+    if (player1_id === player2_id) return { done: false };
     for (const id of this.games.keys()) {
       if (this.fetchUser(id) === player1_id) this.games.delete(id);
       if (this.fetchUser(id) === player2_id) this.games.delete(id);
@@ -179,6 +177,7 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
     this.server.to(id).emit('game:matched', game.id);
     client.emit('game:matched', game.id);
+    this.server.emit('games:updated');
     return { done: true };
   }
 
@@ -237,7 +236,15 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   async endGame(game_id: string) {
-    this.server.to(game_id).emit('game:over');
+    await this.prisma.game.update({
+      where: {
+        id: game_id,
+      },
+      data: {
+        state: GameState.finished,
+      },
+    });
+    this.server.to(game_id).emit('game:finished');
     const clients = await this.server.in(game_id).fetchSockets();
     clients.forEach((client) => {
       client.data.role = undefined;
@@ -258,10 +265,6 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     if (!client.rooms.has(payload.game) || client.data.role !== 'player1')
       return;
-    if (payload.player1 >= 10 || payload.player2 >= 10) {
-      this.endGame(payload.game);
-      return;
-    }
     client.to(payload.game).emit('game:score', {
       player1: payload.player1,
       player2: payload.player2,
@@ -273,6 +276,10 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         player2_score: payload.player2,
       },
     });
+    if (payload.player1 >= 5 || payload.player2 >= 5) {
+      await this.endGame(payload.game);
+    }
+    this.server.emit('games:updated');
   }
 
   @SubscribeMessage('game:join')
@@ -316,21 +323,34 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       },
     });
     for (const game of liveGames) {
-      if (
-        !this.isPlaying(game.player1_id, game.id) ||
-        !this.isPlaying(game.player2_id, game.id)
-      ) {
+      const player1_playing = this.isPlaying(game.player1_id, game.id);
+      const player2_playing = this.isPlaying(game.player2_id, game.id);
+      if (!player1_playing || !player2_playing) {
         console.log('Player disconnected. Ending game.', game.id);
-        await this.prisma.game.update({
-          where: {
-            id: game.id,
-          },
-          data: {
-            state: GameState.finished,
-          },
-        });
-        this.server.to(game.id).emit('game:finished');
-        this.server.socketsLeave(game.id);
+        if (player1_playing && !player2_playing) {
+          await this.prisma.game.update({
+            where: {
+              id: game.id,
+            },
+            data: {
+              player1_score: 5,
+              player2_score: 0,
+            },
+          });
+        }
+        if (player2_playing && !player1_playing) {
+          await this.prisma.game.update({
+            where: {
+              id: game.id,
+            },
+            data: {
+              player1_score: 0,
+              player2_score: 5,
+            },
+          });
+        }
+        await this.endGame(game.id);
+        this.server.emit('games:updated');
       }
     }
   }
