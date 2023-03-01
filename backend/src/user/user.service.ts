@@ -48,7 +48,7 @@ export class UserService {
         },
       });
       if (fetchByid) return fetchByid;
-      else return { meassgae: `Error getProfile` };
+      else return { meassgae: `Error getOneuser` };
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;
     }
@@ -90,11 +90,33 @@ export class UserService {
 
   async gethistoryMatch(req) {
     try {
-      const history = await this.prisma.Game.findMany({
-        where: { player1_id: req.user.id},
-        select :{
-            id: true,
-        }
+      const history = await this.prisma.game.findMany({
+        where: {
+          OR: [
+            {
+              player1_id: req.user.id,
+            },
+            {
+              player2_id: req.user.id,
+            },
+          ],
+        },
+        select: {
+          player1_score: true,
+          player2_score: true,
+
+          player1: {
+            select: {
+              name: true,
+            },
+          },
+
+          player2: {
+            select: {
+              name: true,
+            },
+          },
+        },
       });
       if (history) return history;
       else throw new BadRequestException('  not have any Match History');

@@ -66,7 +66,7 @@ export const NewGame = ({
           mt="lg"
           size="md"
           type="submit"
-          leftIcon={<IconRocket size={18} />}
+          leftIcon={<IconRocket size={20} />}
         >
           Start Playing
         </Button>

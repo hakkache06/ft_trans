@@ -20,7 +20,7 @@ model User {
   wins       Int      @default(0)
   loses      Int      @default(0)
   created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  updated_at DateTime @default(now()) @updatedAt
 
   Friends   Friend[]    @relation("from")
   Friendsto Friend[]    @relation("to")
@@ -54,16 +54,22 @@ model Blocklist {
   @@id([from_id, to_id])
 }
 
+enum GameState {
+  live
+  finished
+}
+
 model Game {
-  id            String   @id @default(uuid())
+  id            String    @id @default(uuid())
   background    String
-  player1       User?    @relation("playerone", fields: [player1_id], references: [id], onDelete: Cascade)
-  player2       User?    @relation("playertwo", fields: [player2_id], references: [id], onDelete: Cascade)
+  player1       User?     @relation("playerone", fields: [player1_id], references: [id], onDelete: Cascade)
+  player2       User?     @relation("playertwo", fields: [player2_id], references: [id], onDelete: Cascade)
   player1_id    String
   player2_id    String
-  player1_score Int      @default(0)
-  player2_score Int      @default(0)
-  created_at    DateTime @default(now())
+  player1_score Int       @default(0)
+  player2_score Int       @default(0)
+  state         GameState @default(live)
+  created_at    DateTime  @default(now())
 }
 
 enum RoomType {

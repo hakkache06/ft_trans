@@ -1,8 +1,8 @@
 import { useCallback, useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";
-import Table from "../components/Game/Table";
 import { Loading } from "../components/Loading";
+import Table from "../components/Table/Table";
 import { UserAvatar } from "../components/UserAvatar";
 import { api, SocketContext } from "../utils";
 
@@ -10,6 +10,9 @@ function Game() {
   const socket = useContext(SocketContext);
   const [loading, setLoading] = useState(false);
   const [game, setGame] = useState<Game>();
+  const [role, setRole] = useState<"player1" | "player2" | "watcher" | null>(
+    null
+  );
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -28,10 +31,25 @@ function Game() {
 
   useEffect(() => {
     setGame(undefined);
+    setRole(null);
     loadGame();
+    socket?.on("game:finished", loadGame);
+    return () => {
+      socket?.off("game:finished");
+    };
   }, [id]);
 
-  if (loading || !game) return <Loading className="w-full !h-auto" />;
+  useEffect(() => {
+    if (!socket || !game || game.state === "finished") return;
+    socket.emitWithAck("game:join", game.id).then((role) => setRole(role));
+    return () => {
+      setRole(null);
+      socket.emit("game:leave", game.id);
+    };
+  }, [game]);
+
+  if (loading || !game || (game.state === "live" && !role))
+    return <Loading className="w-full h-screen" />;
 
   return (
     <>
@@ -50,7 +68,25 @@ function Game() {
           </div>
         </div>
       </div>
-      <Table game={game} />
+      {!role ? (
+        <div
+          className="aspect-[1.75] bg-no-repeat bg-center bg-cover shadow-2xl rounded-xl p-3 flex flex-col items-center justify-center text-4xl font-bold text-white w-full text-center"
+          style={{ backgroundImage: `url(${game.background})` }}
+        >
+          <h3>Game finished</h3>
+          <h1 className="my-0">
+            {game.player1_score} - {game.player2_score}
+          </h1>
+          <h3>
+            {game.player1_score > game.player2_score
+              ? game.player1.name
+              : game.player2.name}{" "}
+            won
+          </h3>
+        </div>
+      ) : (
+        <Table game={game} role={role} />
+      )}
       <div className="flex justify-between items-center mb-4"></div>
     </>
   );

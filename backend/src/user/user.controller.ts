@@ -79,16 +79,14 @@ export class UserController {
   }
 
   @Get('achivement/:id')
-@UseGuards(JwtGuard)
-takeAchivement(@Req() req: Request) {
-  return this.userService.takeAchivement(req);
-}
+  @UseGuards(JwtGuard)
+  takeAchivement(@Req() req: Request) {
+    return this.userService.takeAchivement(req);
+  }
 
-@Get('Statistic/:id')
-@UseGuards(JwtGuard)
-getStatistic(@Req() req: Request) {
-  return this.userService.getStatistic(req);
-}
-
-
+  @Get('Statistic/:id')
+  @UseGuards(JwtGuard)
+  getStatistic(@Req() req: Request) {
+    return this.userService.getStatistic(req);
+  }
 }
