@@ -3,6 +3,7 @@ import { openContextModal } from "@mantine/modals";
 import { IconPingPong } from "@tabler/icons-react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { Link } from "react-router-dom";
 import Game from "../components/Game";
 import { Loading } from "../components/Loading";
 import { api, SocketContext } from "../utils";
@@ -72,6 +73,47 @@ function Games() {
           >
             New Game
           </Button>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Link to="/game/ai">
+          <div
+            className="bg-no-repeat bg-center bg-cover shadow-2xl rounded-xl flex items-end gap-4 bg-white mb-4 aspect-[1.5]"
+            style={{
+              backgroundImage: "url('/ai.png')",
+            }}
+          >
+            <div
+              className="text-white font-bold px-8 pt-4 pb-5 bg-white/25 w-full rounded-b-xl"
+              style={{
+                backdropFilter: "blur(3px)",
+              }}
+            >
+              <div className="text-xl">Play with AI</div>
+              <div className="text-sm text-slate-300">
+                Play against a computer
+              </div>
+            </div>
+          </div>
+        </Link>
+        <div
+          className="bg-no-repeat bg-center bg-cover shadow-2xl rounded-xl flex items-end gap-4 bg-white mb-4 aspect-[1.5] cursor-pointer"
+          style={{
+            backgroundImage: "url('/multiplayer.png')",
+          }}
+          onClick={join}
+        >
+          <div
+            className="text-white font-bold px-8 pt-4 pb-5 bg-white/25 w-full rounded-b-xl"
+            style={{
+              backdropFilter: "blur(3px)",
+            }}
+          >
+            <div className="text-xl">Play with Friends</div>
+            <div className="text-sm text-slate-300">
+              Create or join a multiplayer game
+            </div>
+          </div>
         </div>
       </div>
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">

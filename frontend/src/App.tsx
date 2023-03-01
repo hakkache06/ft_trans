@@ -43,6 +43,7 @@ import { useUsers, useAuth, useQueue } from "./stores";
 import { ModalsProvider } from "@mantine/modals";
 import { NewGame } from "./components/Games/New";
 import Friends from "./components/Friends";
+import EditProfile from "./components/Profile/EditProfile";
 
 const routes = [
   { icon: IconHome2, label: "Home", to: "/" },
@@ -294,7 +295,9 @@ export default function App() {
     api
       .get("user/profile")
       .json<any>()
-      .then((data) => setUser(data));
+      .then((data) => {
+        setUser(data);
+      });
   }, []);
 
   useEffect(() => {
@@ -325,6 +328,18 @@ export default function App() {
     <SocketContext.Provider value={socket}>
       <ModalsProvider modals={{ NewGame }}>
         <Layout user={user} />
+        <Modal
+          opened={user.created_at === user.updated_at}
+          centered
+          overlayBlur={3}
+          withCloseButton={false}
+          closeOnClickOutside={false}
+          closeOnEscape={false}
+          onClose={() => {}}
+          title="Choose a nickname"
+        >
+          <EditProfile user={user} />
+        </Modal>
       </ModalsProvider>
     </SocketContext.Provider>
   );

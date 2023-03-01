@@ -1,11 +1,5 @@
 import { List, ThemeIcon } from "@mantine/core";
-import {
-  IconAward,
-  IconAwardOff,
-  IconPingPong,
-  IconTrophy,
-  IconTrophyOff,
-} from "@tabler/icons-react";
+import { IconPingPong, IconTrophy, IconTrophyOff } from "@tabler/icons-react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";

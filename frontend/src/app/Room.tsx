@@ -68,6 +68,7 @@ function Room() {
       })
       .catch(async (err) => {
         if (err.response.status === 403) {
+          setRoom(undefined);
           setPasswordRequired((await err.response.json()).password);
         } else {
           toast.error("Failed to load room");
