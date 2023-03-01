@@ -19,6 +19,9 @@ export class GamesService {
       select: {
         id: true,
         background: true,
+        player1_score: true,
+        player2_score: true,
+        state: true,
         player1: {
           select: {
             id: true,

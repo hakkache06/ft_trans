@@ -39,4 +39,7 @@ interface Game {
   background: string;
   player1: User;
   player2: User;
+  player1_score: number;
+  player2_score: number;
+  state: "live" | "finished";
 }
