@@ -13,12 +13,12 @@ import { FriendsService } from './friends.service';
 import { Request } from 'express';
 
 @Controller('friends')
+@UseGuards(JwtGuard)
 export class FriendsController {
   constructor(private friendsService: FriendsService) {}
 
   // Get All friend from table
   @Get('')
-  @UseGuards(JwtGuard)
   fetchAllFriends(@Req() req: Request) {
     return this.friendsService.fetchAllfriends(req.user.id);
   }
@@ -27,7 +27,6 @@ export class FriendsController {
   // in table
   // id == from_id
   @Post(':id')
-  @UseGuards(JwtGuard)
   async addFriends(
     @Param('id') idUser: string,
     @Body() b,
@@ -42,7 +41,6 @@ export class FriendsController {
   }
 
   @Post('/accept/:id')
-  @UseGuards(JwtGuard)
   acceptFriends(@Param('id') idUser: string, @Req() req: Request) {
     return this.friendsService.acceptFriends(idUser, req);
   }

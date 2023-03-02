@@ -5,11 +5,11 @@ services:
     container_name: nest-postgres
     restart: always
     ports:
-      - 5432:5432
+      - "5432:5432"
     environment:
-      POSTGRES_USER: postgress
-      POSTGRES_PASSWORD: 123
-      POSTGRES_DB: nest
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - nest-postgres:/var/lib/postgresql/data
     networks:
@@ -17,20 +17,38 @@ services:
   frontend:
     build: ./frontend/
     container_name: frontend
-    restart: always
+    restart: never
     ports:
-      - 5173:5173
+      - "5173:5173"
     networks:
     - my_network
+    volumes:
+    - build_front:/usr/src/app
   backend:
     build: ./backend/
     container_name: backend
     restart: always
     ports:
-      - 3000:3000
+      - "3000:3000"
     networks:
     - my_network
+  caddy:
+    image: caddy
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+    volumes:
+      - $PWD/Caddyfile:/etc/caddy/Caddyfile
+      - build_front:/srv
+      - caddy_data:/data
+      - caddy_config:/config
 volumes:
+  caddy_data:
+    external: true
+  caddy_config:
+  build_front:
   nest-postgres:
     name: nest-postgres-db
 networks:

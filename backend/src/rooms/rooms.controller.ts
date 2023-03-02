@@ -18,37 +18,33 @@ import { RoomsService } from './rooms.service';
 import { Request } from 'express';
 
 @Controller('rooms')
+@UseGuards(JwtGuard)
 export class RoomsController {
   constructor(private roomsService: RoomsService) {}
 
   @Post('dm/:user_id')
-  @UseGuards(JwtGuard)
   async dmUser(@Param('user_id') idUser: string, @Req() req: Request) {
     return this.roomsService.dmUser(idUser, req.user.id);
   }
 
   @UsePipes(new ValidationPipe())
   @Post()
-  @UseGuards(JwtGuard)
   async createRoom(@Body() body: RoomDto, @Req() req: Request) {
     return this.roomsService.createRoom(body, req.user.id);
   }
 
   @Get()
-  @UseGuards(JwtGuard)
   async getAllUserRooms(@Req() req: Request) {
     return this.roomsService.getAllUserRooms(req.user.id);
   }
 
   @Get(':id')
-  @UseGuards(JwtGuard)
   async getOneRoom(@Param('id') idRoom: string, @Req() req: Request) {
     return this.roomsService.getOneRoom(idRoom, req.user.id);
   }
 
   @UsePipes(new ValidationPipe())
   @Put(':id')
-  @UseGuards(JwtGuard)
   async update(
     @Param('id') idRoom: string,
     @Req() req: Request,
@@ -59,7 +55,6 @@ export class RoomsController {
   }
 
   @Post(':id/users')
-  @UseGuards(JwtGuard)
   async joinRoom(
     @Param('id') idRoom: string,
     @Req() req: Request,
@@ -69,7 +64,6 @@ export class RoomsController {
   }
 
   @Post(':id/users/:user_id')
-  @UseGuards(JwtGuard)
   async addToRoom(
     @Param('id') idRoom: string,
     @Param('user_id') idUser: string,
@@ -80,7 +74,6 @@ export class RoomsController {
   }
 
   @Delete(':id/users/:user_id')
-  @UseGuards(JwtGuard)
   async kickUser(
     @Param('id') idRoom: string,
     @Param('user_id') idUser: string,
@@ -91,14 +84,12 @@ export class RoomsController {
   }
 
   @Delete(':id/users')
-  @UseGuards(JwtGuard)
   async leaveRoom(@Param('id') idRoom: string, @Req() req: Request) {
     await this.roomsService.leaveRoom(idRoom, req.user.id);
   }
 
   @UsePipes(new ValidationPipe())
   @Patch(':id/users/:user_id')
-  @UseGuards(JwtGuard)
   async updateUser(
     @Param('id') idRoom: string,
     @Param('user_id') idUser: string,
