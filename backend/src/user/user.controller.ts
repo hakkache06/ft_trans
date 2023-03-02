@@ -1,8 +1,11 @@
 import {
   Body,
   Controller,
+  FileTypeValidator,
   Get,
+  MaxFileSizeValidator,
   Param,
+  ParseFilePipe,
   Patch,
   Post,
   Query,
@@ -50,13 +53,6 @@ export class UserController {
   @UseGuards(JwtGuard)
   @UseInterceptors(
     FileInterceptor('image', {
-      fileFilter: (req, file, cb) => {
-        if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/))
-          cb(null, true);
-        else {
-          cb(new MulterError('LIMIT_UNEXPECTED_FILE', 'image'), false);
-        }
-      },
       storage: diskStorage({
         destination: './files',
         filename: (req, file, callback) => {
@@ -68,7 +64,19 @@ export class UserController {
       }),
     }),
   )
-  uploadFile(@UploadedFile() file: Express.Multer.File) {
+  uploadFile(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 1000 * 1000 * 20 }),
+          new FileTypeValidator({
+            fileType: /image\/png|image\/jpeg/,
+          }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+  ) {
     return { url: process.env.FILES_URL + file.filename };
   }
 }

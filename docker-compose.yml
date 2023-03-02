@@ -15,23 +15,36 @@ services:
     networks:
     - my_network
   frontend:
-    build: ./frontend/
+    build:
+      context: ./frontend
+      args:
+        VITE_BACKEND_URL: ${VITE_BACKEND_URL}
     container_name: frontend
-    restart: never
-    ports:
-      - "5173:5173"
+    restart: on-failure
     networks:
     - my_network
     volumes:
     - build_front:/usr/src/app
   backend:
-    build: ./backend/
+    build:
+      context: ./backend/
+      args:
+        DATABASE_URL: ${DATABASE_URL}   
+        JWT_SECRET: ${JWT_SECRET}
+        REDIRECT_URL: ${REDIRECT_URL}
+        FILES_URL: ${FILES_URL}
+        CLIENT_ID: ${CLIENT_ID}
+        CLIENT_SECRET: ${CLIENT_SECRET}
     container_name: backend
     restart: always
     ports:
       - "3000:3000"
+    depends_on:
+      - nest-postgres
     networks:
     - my_network
+    volumes:
+      - backend_files:/usr/src/app/files
   caddy:
     image: caddy
     restart: always
@@ -45,8 +58,8 @@ services:
       - caddy_data:/data
       - caddy_config:/config
 volumes:
+  backend_files:
   caddy_data:
-    external: true
   caddy_config:
   build_front:
   nest-postgres:
