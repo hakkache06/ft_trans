@@ -78,10 +78,20 @@ export const useUsers = create<{
     }),
 }));
 
+export type Queue = {
+  [client: string]: {
+    opponentId?: string;
+    requester: {
+      name: string;
+      avatar: string;
+    };
+  };
+};
+
 export const useQueue = create<{
-  queue: string[];
-  setQueue: (queue: string[]) => void;
+  queue: Queue;
+  setQueue: (queue: Queue) => void;
 }>((set) => ({
-  queue: [],
-  setQueue: (queue: string[]) => set({ queue }),
+  queue: {},
+  setQueue: (queue: Queue) => set({ queue }),
 }));

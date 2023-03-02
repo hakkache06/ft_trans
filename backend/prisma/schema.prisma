@@ -17,9 +17,6 @@ model User {
   avatar     String
   tfa        String?
   intra_id   Int      @unique
-  xp         Int      @default(0)
-  wins       Int      @default(0)
-  loses      Int      @default(0)
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
 

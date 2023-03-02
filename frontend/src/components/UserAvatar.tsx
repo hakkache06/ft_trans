@@ -1,4 +1,5 @@
 import { Avatar, MantineNumberSize, Menu } from "@mantine/core";
+import { openContextModal } from "@mantine/modals";
 import {
   IconUserCircle,
   IconFriendsOff,
@@ -80,6 +81,19 @@ export function UserAvatar({
     });
   };
 
+  const invite = () => {
+    openContextModal({
+      modal: "NewGame",
+      title: "Invite " + user.name + " to a game",
+      centered: true,
+      transitionDuration: 200,
+      overlayBlur: 3,
+      innerProps: {
+        opponentId: user.id,
+      },
+    });
+  };
+
   return (
     <Menu shadow="md" withArrow>
       <Menu.Target>
@@ -114,7 +128,7 @@ export function UserAvatar({
             <Menu.Item onClick={dm} icon={<IconMessagePlus size={14} />}>
               Private message
             </Menu.Item>
-            <Menu.Item icon={<IconDeviceGamepad2 size={14} />}>
+            <Menu.Item onClick={invite} icon={<IconDeviceGamepad2 size={14} />}>
               Invite to game
             </Menu.Item>
             {blocklist.includes(user.id) ? (

@@ -24,7 +24,13 @@ export const NewGame = ({
   const onSubmit = async (values: typeof form.values) => {
     if (!socket) return;
     await toast.promise(
-      socket?.timeout(10000).emitWithAck("game:create", values),
+      socket
+        ?.timeout(10000)
+        .emitWithAck("game:create", { ...values, ...innerProps })
+        .then((data) => {
+          if (!data.done) throw new Error("Could not find a game");
+          return data;
+        }),
       {
         loading: "Creating game...",
         success: "Created game successfully!",

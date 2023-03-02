@@ -25,6 +25,8 @@ import {
   Modal,
   Loader,
   Button,
+  Dialog,
+  Indicator,
 } from "@mantine/core";
 import {
   IconChevronLeft,
@@ -39,7 +41,7 @@ import {
 import { io, Socket } from "socket.io-client";
 import { Loading } from "./components/Loading";
 import { toast } from "react-hot-toast";
-import { useUsers, useAuth, useQueue } from "./stores";
+import { useUsers, useAuth, useQueue, Queue } from "./stores";
 import { ModalsProvider } from "@mantine/modals";
 import { NewGame } from "./components/Games/New";
 import Friends from "./components/Friends";
@@ -158,7 +160,44 @@ function Layout({ user }: { user: any }) {
     socket.emit("game:cancel");
   };
 
-  const matchmaking = queue.includes(socket?.id || "");
+  const accept = async () => {
+    if (!socket) return;
+    await toast.promise(
+      socket
+        ?.timeout(10000)
+        .emitWithAck("game:accept")
+        .then((data) => {
+          if (!data.done) throw new Error("Could not find a game");
+          return data;
+        }),
+      {
+        loading: "Accepting invite...",
+        success: "Accepted invite successfully!",
+        error: "Accepting failed",
+      }
+    );
+  };
+
+  const decline = async () => {
+    if (!socket) return;
+    await toast.promise(
+      socket
+        ?.timeout(10000)
+        .emitWithAck("game:decline")
+        .then((data) => {
+          if (!data.done) throw new Error("Could not find a game");
+          return data;
+        }),
+      {
+        loading: "Declining invite...",
+        success: "Declined invite successfully!",
+        error: "Declining failed",
+      }
+    );
+  };
+
+  const matchmaking = Object.keys(queue).includes(socket?.id || "");
+  const invite = Object.values(queue).find((q) => q.opponentId === id);
 
   return (
     <AppShell
@@ -279,6 +318,27 @@ function Layout({ user }: { user: any }) {
           </Button>
         </div>
       </Modal>
+      {invite && (
+        <Dialog opened={true} size="lg" radius="md">
+          <Group noWrap align="center" mb="xs" spacing="sm">
+            <Indicator offset={3} processing size={6} color="teal">
+              <Avatar size="sm" src={invite.requester.avatar} radius="xl" />
+            </Indicator>
+            <Text size="sm" weight={500}>
+              {invite.requester.name} is inviting you to join a game
+            </Text>
+          </Group>
+
+          <Group align="flex-end" spacing="xs" position="apart">
+            <Button onClick={accept} color="teal" size="xs">
+              Accept invite
+            </Button>
+            <Button onClick={decline} color="red" size="xs">
+              Decline invite
+            </Button>
+          </Group>
+        </Dialog>
+      )}
     </AppShell>
   );
 }
@@ -312,7 +372,7 @@ export default function App() {
         toast.error("Disconnected from server, please refresh the page");
       })
       .on("users:online", (data: string[]) => setOnline(data))
-      .on("game:queue", (data: string[]) => setQueue(data));
+      .on("game:queue", (data: Queue) => setQueue(data));
     setSocket(s);
     return () => {
       s.disconnect();
