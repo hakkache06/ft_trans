@@ -1,4 +1,3 @@
-import { UsePipes, ValidationPipe } from '@nestjs/common';
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -157,7 +156,6 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('game:create')
-  @UsePipes(new ValidationPipe({ transform: true }))
   async createGame(
     @MessageBody() payload: CreateGameDto,
     @ConnectedSocket() client: Socket,

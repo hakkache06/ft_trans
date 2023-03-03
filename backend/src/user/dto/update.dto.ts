@@ -1,7 +1,10 @@
-import { IsNotEmpty, IsOptional, IsUrl } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsUrl, Length } from 'class-validator';
 
 export class UpdateUserDto {
   @IsNotEmpty()
+  @Length(3, 20, {
+    message: 'Name must be between 3 and 20 characters',
+  })
   name: string;
 
   @IsOptional()

@@ -1,9 +1,7 @@
 import {
   BadRequestException,
   Injectable,
-  UnauthorizedException,
   UsePipes,
-  ValidationPipe,
 } from '@nestjs/common';
 import axios from 'axios';
 import { PrismaService } from '../prisma/prisma.service';
@@ -51,7 +49,6 @@ export class AuthService {
     }
   }
 
-  @UsePipes(new ValidationPipe())
   async create_user(userDto: UserDto) {
     const upsertUser = await this.prisma.user.upsert({
       where: {
