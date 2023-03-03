@@ -9,8 +9,6 @@ import {
   Put,
   Req,
   UseGuards,
-  UsePipes,
-  ValidationPipe,
 } from '@nestjs/common';
 import { JwtGuard } from 'src/auth/guards';
 import { RoomDto, RoomUserDto, RoomWithPwd, UpdateRoomDto } from './dto';
@@ -27,7 +25,6 @@ export class RoomsController {
     return this.roomsService.dmUser(idUser, req.user.id);
   }
 
-  @UsePipes(new ValidationPipe())
   @Post()
   async createRoom(@Body() body: RoomDto, @Req() req: Request) {
     return this.roomsService.createRoom(body, req.user.id);
@@ -43,7 +40,6 @@ export class RoomsController {
     return this.roomsService.getOneRoom(idRoom, req.user.id);
   }
 
-  @UsePipes(new ValidationPipe())
   @Put(':id')
   async update(
     @Param('id') idRoom: string,
@@ -88,7 +84,6 @@ export class RoomsController {
     await this.roomsService.leaveRoom(idRoom, req.user.id);
   }
 
-  @UsePipes(new ValidationPipe())
   @Patch(':id/users/:user_id')
   async updateUser(
     @Param('id') idRoom: string,

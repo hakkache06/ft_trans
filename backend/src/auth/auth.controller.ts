@@ -10,8 +10,6 @@ import {
   Redirect,
   Req,
   UseGuards,
-  UsePipes,
-  ValidationPipe,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
@@ -34,7 +32,6 @@ export class AuthController {
   )
   redirect() {}
 
-  @UsePipes(new ValidationPipe())
   @Get('')
   async getToken(@Query() obj: codeDto) {
     const data = await this.authService.fetch_data(obj.code);
@@ -52,7 +49,6 @@ export class AuthController {
     };
   }
 
-  @UsePipes(new ValidationPipe())
   @Post('2fa/turn-on')
   @UseGuards(JwtGuard)
   async turn_on_2f_auth(@Req() req: Request, @Body() body: TwoFactDto) {
