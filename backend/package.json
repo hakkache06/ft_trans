@@ -17,7 +17,8 @@
     "migrate:deploy": "npx prisma migrate deploy",
     "prisma:generate": "npx prisma generate",
     "prisma:studio": "npx prisma studio",
-    "prisma:seed": "npx prisma db seed"
+    "prisma:seed": "npx prisma db seed",
+    "start:prod": "prisma migrate deploy && node dist/main"
   },
   "dependencies": {
     "@nestjs/common": "^9.0.0",

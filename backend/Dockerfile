@@ -1,4 +1,4 @@
-FROM node:18
+FROM node:alpine
 
 ARG DATABASE_URL JWT_SECRET REDIRECT_URL FILES_URL CLIENT_ID CLIENT_SECRET
 ENV DATABASE_URL=$DATABASE_URL
@@ -20,8 +20,4 @@ RUN npx prisma generate
 
 RUN npm run build
 
-RUN chmod +x ./script.sh
-
-ENTRYPOINT ["./script.sh"]
-
-CMD [ "node", "dist/main.js" ]
+CMD [ "npm", "run", "start:prod" ]

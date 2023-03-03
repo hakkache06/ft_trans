@@ -217,6 +217,9 @@ export default function Table({
     if (!canvas) return;
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     const ball: Ball = createBall(canvas, ballColor, getReverse(ballColor));
+    setTimeout(() => {
+      ball.stop = false;
+    }, 1500);
     const player1: Player = {
       width: canvas.width - (99 * canvas.width) / 100,
       height: canvas.height - (80 * canvas.height) / 100,

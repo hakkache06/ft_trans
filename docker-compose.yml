@@ -23,8 +23,12 @@ services:
     restart: on-failure
     networks:
     - my_network
+    ports:
+      - "80:80"
     volumes:
-    - build_front:/usr/src/app
+      - build_front:/usr/src/app
+      - caddy_data:/data
+      - caddy_config:/config
   backend:
     build:
       context: ./backend/
@@ -45,18 +49,6 @@ services:
     - my_network
     volumes:
       - backend_files:/usr/src/app/files
-  caddy:
-    image: caddy
-    restart: always
-    ports:
-      - "80:80"
-    depends_on:
-      - frontend
-    volumes:
-      - $PWD/Caddyfile:/etc/caddy/Caddyfile
-      - build_front:/srv
-      - caddy_data:/data
-      - caddy_config:/config
 volumes:
   backend_files:
   caddy_data:
