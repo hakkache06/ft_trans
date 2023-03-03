@@ -279,7 +279,7 @@ export class RoomsService {
     this.gateway.server.emit('room:updated');
   }
 
-  async verifyAdmin(idRoom: string, user_id: any) {
+  async verifyAdmin(idRoom: string, user_id: string) {
     const isAdmin = await this.prisma.roomUser.findFirst({
       where: {
         room_id: idRoom,
@@ -290,6 +290,21 @@ export class RoomsService {
     if (!isAdmin)
       throw new HttpException(
         'User does not have admin rights in this room',
+        403,
+      );
+  }
+
+  async checkIfOwner(idRoom: string, idUser: string) {
+    const isOwner = await this.prisma.roomUser.findFirst({
+      where: {
+        room_id: idRoom,
+        user_id: idUser,
+        owner: true,
+      },
+    });
+    if (isOwner)
+      throw new HttpException(
+        'Cannot execute actions on the owner',
         403,
       );
   }

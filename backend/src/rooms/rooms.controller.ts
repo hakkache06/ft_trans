@@ -76,6 +76,7 @@ export class RoomsController {
     @Req() req: Request,
   ) {
     await this.roomsService.verifyAdmin(idRoom, req.user.id);
+    await this.roomsService.checkIfOwner(idRoom, idUser);
     await this.roomsService.leaveRoom(idRoom, idUser);
   }
 
@@ -94,6 +95,7 @@ export class RoomsController {
     this.roomsService.verifyAdmin(idRoom, req.user.id);
     if (body.admin !== undefined)
       await this.roomsService.verifyOwner(idRoom, req.user.id);
+    await this.roomsService.checkIfOwner(idRoom, idUser);
     return this.roomsService.updateUser(idRoom, idUser, body);
   }
 }
