@@ -51,7 +51,7 @@ export class FriendsService {
     return { friends, pending };
   }
 
-  async addFrineds(idUser: string, req) {
+  async addFriends(idUser: string, req) {
     if (idUser === req.user.id)
       throw new BadRequestException('It is not possible to add yourself!');
     const checkuser = await this.prisma.user.count({

@@ -33,7 +33,6 @@ export class UserService {
     });
     if (!getProfile) throw new HttpException("User not found", 404);
     return getProfile;
-    // else return { meassgae: `Error getProfile` };
   }
 
   async getOneUser(idUser: string) {

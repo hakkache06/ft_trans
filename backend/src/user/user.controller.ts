@@ -33,21 +33,21 @@ export class UserController {
   constructor(private userService: UserService) {}
 
   @Get()
-  fetchAlluser(@Query('search') search: string) {
+  async fetchAlluser(@Query('search') search: string) {
     return this.userService.fetchAlluser(search);
   }
   @Get('profile')
-  getProfile(@Req() req: Request) {
+  async getProfile(@Req() req: Request) {
     return this.userService.getProfile(req.user.id);
   }
 
   @Get(':id')
-  getOneUser(@Param('id', ParseUUIDPipe) idUser: string) {
+  async getOneUser(@Param('id', ParseUUIDPipe) idUser: string) {
     return this.userService.getOneUser(idUser);
   }
 
   @Patch('profile')
-  updateUserbyId(@Req() req: Request, @Body() b: UpdateUserDto) {
+  async updateUserbyId(@Req() req: Request, @Body() b: UpdateUserDto) {
     return this.userService.updateUserbyId(req.user.id, b);
   }
 

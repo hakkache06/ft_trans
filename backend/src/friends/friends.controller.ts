@@ -31,7 +31,7 @@ export class FriendsController {
     @Param('id', ParseUUIDPipe) idUser: string,
     @Req() req: Request,
   ) {
-    return this.friendsService.addFrineds(idUser, req);
+    return this.friendsService.addFriends(idUser, req);
   }
 
   @Delete(':id')
