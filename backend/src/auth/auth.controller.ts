@@ -9,15 +9,17 @@ import {
   Query,
   Redirect,
   Req,
+  UseFilters,
   UseGuards,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { AuthService } from './auth.service';
-import { authenticator } from 'otplib';
 import { Jwt2faGuard, JwtGuard } from './guards';
 import { TwoFactDto, codeDto } from './dto';
+import { PrismaClientExceptionFilter } from 'src/filters/prisma-client-exception.filter';
 
 @Controller('auth')
+@UseFilters(PrismaClientExceptionFilter)
 export class AuthController {
   constructor(private authService: AuthService) {}
 

@@ -10,7 +10,6 @@ import { RoomsGateway } from 'src/shared/rooms.gateway';
 export class FriendsService {
   constructor(private prisma: PrismaService, private gateway: RoomsGateway) {}
 
-  //Fetch user By name (?)
   async fetchAllfriends(id: string) {
     const sent = (
       await this.prisma.friend.findMany({
@@ -126,5 +125,3 @@ export class FriendsService {
     this.gateway.server.emit('users:friends');
   }
 }
-
-//Authorization: Bearer <token>

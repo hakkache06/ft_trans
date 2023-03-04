@@ -8,7 +8,6 @@ import { UpdateUserDto } from './dto/update.dto';
 export class UserService {
   constructor(private prisma: PrismaService) {}
 
-  //Fetch user By name (?)
   async fetchAlluser(search: string) {
     return await this.prisma.user.findMany({
       where: {
@@ -26,18 +25,15 @@ export class UserService {
     });
   }
 
-  getProfile(id: string) {
-    try {
-      const getProfile = this.prisma.user.findUnique({
-        where: {
-          id,
-        },
-      });
-      if (getProfile) return getProfile;
-      else return { meassgae: `Error getProfile` };
-    } catch (e) {
-      if (e instanceof Prisma.PrismaClientKnownRequestError) throw e;
-    }
+  async getProfile(id: string) {
+    const getProfile = await this.prisma.user.findUnique({
+      where: {
+        id,
+      },
+    });
+    if (!getProfile) throw new HttpException("User not found", 404);
+    return getProfile;
+    // else return { meassgae: `Error getProfile` };
   }
 
   async getOneUser(idUser: string) {
@@ -107,17 +103,17 @@ export class UserService {
   }
 
   async updateUserbyId(idUser: string, b: UpdateUserDto) {
-    if (
-      await this.prisma.user.findFirst({
-        where: {
-          id: {
-            not: idUser,
-          },
-          name: b.name,
-        },
-      })
-    )
-      throw new HttpException('Name already exists', 400);
+    // if (
+    //   await this.prisma.user.findFirst({
+    //     where: {
+    //       id: {
+    //         not: idUser,
+    //       },
+    //       name: b.name,
+    //     },
+    //   })
+    // )
+    //   throw new HttpException('Name already exists', 400);
     await this.prisma.user.update({
       where: {
         id: idUser,

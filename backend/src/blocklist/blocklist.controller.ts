@@ -1,10 +1,12 @@
-import { Controller } from '@nestjs/common';
+import { Controller, UseFilters } from '@nestjs/common';
 import { BlocklistService } from './blocklist.service';
 import { Delete, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { JwtGuard } from 'src/auth/guards';
 import { Request } from 'express';
+import { PrismaClientExceptionFilter } from 'src/filters/prisma-client-exception.filter';
 
 @Controller('blocklist')
+@UseFilters(PrismaClientExceptionFilter)
 @UseGuards(JwtGuard)
 export class BlocklistController {
   constructor(private blocklistService: BlocklistService) {}

@@ -6,11 +6,13 @@ import {
   MaxFileSizeValidator,
   Param,
   ParseFilePipe,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
   Req,
   UploadedFile,
+  UseFilters,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -22,35 +24,34 @@ import { diskStorage, MulterError } from 'multer';
 import { extname } from 'path';
 import { JwtGuard } from 'src/auth/guards';
 import { UpdateUserDto } from './dto/update.dto';
+import { PrismaClientExceptionFilter } from 'src/filters/prisma-client-exception.filter';
 
 @Controller('user')
+@UseFilters(PrismaClientExceptionFilter)
+@UseGuards(JwtGuard)
 export class UserController {
   constructor(private userService: UserService) {}
-  //fetch All_user
+
   @Get()
-  @UseGuards(JwtGuard)
   fetchAlluser(@Query('search') search: string) {
     return this.userService.fetchAlluser(search);
   }
   @Get('profile')
-  @UseGuards(JwtGuard)
   getProfile(@Req() req: Request) {
     return this.userService.getProfile(req.user.id);
   }
-  //fetchByid
+
   @Get(':id')
-  @UseGuards(JwtGuard)
-  getOneUser(@Param('id') idUser: string) {
+  getOneUser(@Param('id', ParseUUIDPipe) idUser: string) {
     return this.userService.getOneUser(idUser);
   }
-  //updateUser by Id
+
   @Patch('profile')
-  @UseGuards(JwtGuard)
   updateUserbyId(@Req() req: Request, @Body() b: UpdateUserDto) {
     return this.userService.updateUserbyId(req.user.id, b);
   }
+
   @Post('upload')
-  @UseGuards(JwtGuard)
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
