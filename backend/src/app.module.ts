@@ -11,6 +11,8 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { SharedModule } from './shared/shared.module';
 import { BlocklistModule } from './blocklist/blocklist.module';
+import { APP_FILTER } from '@nestjs/core';
+import { PrismaClientExceptionFilter } from './filters/prisma-client-exception.filter';
 
 @Module({
   imports: [
@@ -32,6 +34,11 @@ import { BlocklistModule } from './blocklist/blocklist.module';
     BlocklistModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: PrismaClientExceptionFilter,
+    },
+  ],
 })
 export class AppModule {}
