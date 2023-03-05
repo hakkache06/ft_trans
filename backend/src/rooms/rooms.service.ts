@@ -192,7 +192,6 @@ export class RoomsService {
         },
         id: true,
         name: true,
-        password: true,
         type: true,
       },
     });
@@ -303,10 +302,7 @@ export class RoomsService {
       },
     });
     if (isOwner)
-      throw new HttpException(
-        'Cannot execute actions on the owner',
-        403,
-      );
+      throw new HttpException('Cannot execute actions on the owner', 403);
   }
 
   async verifyOwner(idRoom: string, user_id: any) {

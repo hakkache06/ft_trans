@@ -6,6 +6,7 @@ import {
   SubscribeMessage,
   ConnectedSocket,
   MessageBody,
+  WsException,
 } from '@nestjs/websockets';
 import { GameState } from '@prisma/client';
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
@@ -22,6 +23,9 @@ class CreateGameDto {
   @IsString()
   opponentId?: string;
 }
+
+const isMuted = (mute: Date | null) =>
+  mute ? (new Date(mute) > new Date() ? new Date(mute) : null) : null;
 
 @WebSocketGateway({
   cors: {
@@ -90,17 +94,22 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   async handleDisconnect(client: Socket) {
-    console.log(`Disconnected: ${client.id}`);
-    if (this.games.has(client.id)) this.games.delete(client.id);
+    try {
+      console.log(`Disconnected: ${client.id}`);
+      if (this.games.has(client.id)) this.games.delete(client.id);
 
-    const idUser = this.fetchUser(client.id);
-    if (!idUser) return;
+      const idUser = this.fetchUser(client.id);
+      if (!idUser) return;
 
-    this.idUserToSocketIdMap.get(idUser).delete(client.id);
-    if (this.idUserToSocketIdMap.get(idUser).size === 0)
-      this.idUserToSocketIdMap.delete(idUser);
-    this.emitOnlineUsers();
-    await this.verifyGames();
+      this.idUserToSocketIdMap.get(idUser).delete(client.id);
+      if (this.idUserToSocketIdMap.get(idUser).size === 0)
+        this.idUserToSocketIdMap.delete(idUser);
+      this.emitOnlineUsers();
+      await this.verifyGames();
+    } catch (err) {
+      console.error('Disconnection error', err);
+      return client.disconnect();
+    }
   }
 
   @SubscribeMessage('room:join')
@@ -109,6 +118,15 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
   ) {
     const idUser = this.fetchUser(client.id);
+    const roomUser = await this.prisma.roomUser.findUnique({
+      where: {
+        user_id_room_id: {
+          room_id: payload,
+          user_id: idUser,
+        },
+      },
+    });
+    if (roomUser.ban) throw new WsException("User can't join");
     console.log(`User ${idUser} joined room : ${payload}`);
     client.join(payload);
   }
@@ -121,7 +139,16 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (!payload.content) return { done: false };
     const idUser = this.fetchUser(client.id);
     if (!idUser) return { done: false };
-    //check access
+    const roomUser = await this.prisma.roomUser.findUnique({
+      where: {
+        user_id_room_id: {
+          room_id: payload.room_id,
+          user_id: idUser,
+        },
+      },
+    });
+    if (roomUser.ban || isMuted(roomUser.mute))
+      throw new WsException("User can't send");
     const message = await this.prisma.message.create({
       data: {
         content: payload.content,

@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Param,
   ParseUUIDPipe,
@@ -25,7 +26,10 @@ export class RoomsController {
   constructor(private roomsService: RoomsService) {}
 
   @Post('dm/:user_id')
-  async dmUser(@Param('user_id', ParseUUIDPipe) idUser: string, @Req() req: Request) {
+  async dmUser(
+    @Param('user_id', ParseUUIDPipe) idUser: string,
+    @Req() req: Request,
+  ) {
     return this.roomsService.dmUser(idUser, req.user.id);
   }
 
@@ -40,7 +44,10 @@ export class RoomsController {
   }
 
   @Get(':id')
-  async getOneRoom(@Param('id', ParseUUIDPipe) idRoom: string, @Req() req: Request) {
+  async getOneRoom(
+    @Param('id', ParseUUIDPipe) idRoom: string,
+    @Req() req: Request,
+  ) {
     return this.roomsService.getOneRoom(idRoom, req.user.id);
   }
 
@@ -81,11 +88,16 @@ export class RoomsController {
   ) {
     await this.roomsService.verifyAdmin(idRoom, req.user.id);
     await this.roomsService.checkIfOwner(idRoom, idUser);
+    if (idUser === req.user.id)
+      throw new ForbiddenException("Can't kick yourself");
     await this.roomsService.leaveRoom(idRoom, idUser);
   }
 
   @Delete(':id/users')
-  async leaveRoom(@Param('id', ParseUUIDPipe) idRoom: string, @Req() req: Request) {
+  async leaveRoom(
+    @Param('id', ParseUUIDPipe) idRoom: string,
+    @Req() req: Request,
+  ) {
     await this.roomsService.leaveRoom(idRoom, req.user.id);
   }
 
@@ -100,6 +112,8 @@ export class RoomsController {
     if (body.admin !== undefined)
       await this.roomsService.verifyOwner(idRoom, req.user.id);
     await this.roomsService.checkIfOwner(idRoom, idUser);
+    if (idUser === req.user.id)
+      throw new ForbiddenException("Can't edit yourself");
     return this.roomsService.updateUser(idRoom, idUser, body);
   }
 }
