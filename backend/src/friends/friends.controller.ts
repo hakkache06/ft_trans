@@ -1,5 +1,4 @@
 import {
-  Body,
   Controller,
   Delete,
   Get,
@@ -35,14 +34,18 @@ export class FriendsController {
   }
 
   @Delete(':id')
-  async removeFriends(@Param('id', ParseUUIDPipe) idUser: string, @Req() req: Request) {
+  async removeFriends(
+    @Param('id', ParseUUIDPipe) idUser: string,
+    @Req() req: Request,
+  ) {
     return this.friendsService.removeFriends(idUser, req);
   }
 
   @Post('/accept/:id')
-  async acceptFriends(@Param('id', ParseUUIDPipe) idUser: string, @Req() req: Request) {
+  async acceptFriends(
+    @Param('id', ParseUUIDPipe) idUser: string,
+    @Req() req: Request,
+  ) {
     return this.friendsService.acceptFriends(idUser, req);
   }
-
 }
-

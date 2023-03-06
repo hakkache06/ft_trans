@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  UsePipes,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import axios from 'axios';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
@@ -45,7 +41,7 @@ export class AuthService {
         avatar: data.image.versions.medium,
       };
     } catch (e) {
-      console.error(e)
+      console.error(e);
       throw new BadRequestException('Bad request');
     }
   }
@@ -124,7 +120,7 @@ export class AuthService {
   }
 
   async turnOnTwoFactorAuthentication(user: any, secret: string) {
-    const userUpdated = await this.prisma.user.update({
+    await this.prisma.user.update({
       where: {
         id: user.id,
       },
@@ -135,7 +131,7 @@ export class AuthService {
   }
 
   async turnOffTwoFactorAuthentication(user: any) {
-    const userUpdated = await this.prisma.user.update({
+    await this.prisma.user.update({
       where: {
         id: user.id,
       },

@@ -1,6 +1,4 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
-
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UpdateUserDto } from './dto/update.dto';
 
@@ -31,7 +29,7 @@ export class UserService {
         id,
       },
     });
-    if (!getProfile) throw new HttpException("User not found", 404);
+    if (!getProfile) throw new HttpException('User not found', 404);
     return getProfile;
   }
 
@@ -102,17 +100,17 @@ export class UserService {
   }
 
   async updateUserbyId(idUser: string, b: UpdateUserDto) {
-    // if (
-    //   await this.prisma.user.findFirst({
-    //     where: {
-    //       id: {
-    //         not: idUser,
-    //       },
-    //       name: b.name,
-    //     },
-    //   })
-    // )
-    //   throw new HttpException('Name already exists', 400);
+    if (
+      await this.prisma.user.findFirst({
+        where: {
+          id: {
+            not: idUser,
+          },
+          name: b.name,
+        },
+      })
+    )
+      throw new HttpException('Name already exists', 400);
     await this.prisma.user.update({
       where: {
         id: idUser,

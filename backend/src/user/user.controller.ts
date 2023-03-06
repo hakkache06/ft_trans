@@ -20,7 +20,7 @@ import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 import { UserService } from './user.service';
-import { diskStorage, MulterError } from 'multer';
+import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { JwtGuard } from 'src/auth/guards';
 import { UpdateUserDto } from './dto/update.dto';

@@ -32,7 +32,9 @@ export class AuthController {
     )}&response_type=code`,
     301,
   )
-  redirect() {}
+  redirect() {
+    // redirect to auth page
+  }
 
   @Get('')
   async getToken(@Query() obj: codeDto) {

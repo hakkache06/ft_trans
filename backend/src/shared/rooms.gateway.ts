@@ -143,8 +143,7 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         },
       },
     });
-    if (roomUser.ban || isMuted(roomUser.mute))
-      throw new WsException("User can't send");
+    if (roomUser.ban || isMuted(roomUser.mute)) return { done: false };
     const message = await this.prisma.message.create({
       data: {
         content: payload.content,

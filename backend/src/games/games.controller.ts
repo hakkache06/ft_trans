@@ -1,4 +1,11 @@
-import { Controller, Get, Param, ParseUUIDPipe, UseFilters, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  UseFilters,
+  UseGuards,
+} from '@nestjs/common';
 import { GamesService } from './games.service';
 import { JwtGuard } from 'src/auth/guards';
 import { PrismaClientExceptionFilter } from 'src/filters/prisma-client-exception.filter';
