@@ -69,8 +69,8 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   handleConnection(client: Socket) {
-    console.log(`Connected ${client.id}`);
     try {
+      console.log(`Connected ${client.id}`);
       const { id, tfa_required } = verify(
         client.handshake.auth.token,
         process.env.JWT_SECRET,

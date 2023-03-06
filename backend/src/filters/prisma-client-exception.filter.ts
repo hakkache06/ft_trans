@@ -9,7 +9,7 @@ export class PrismaClientExceptionFilter extends BaseExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const code = parseInt(exception.code.substring(1));
-    if (code >= 2000 || code < 3000) {
+    if (code >= 1000 || code < 3000) {
       response.status(HttpStatus.BAD_REQUEST).json({
         statusCode: HttpStatus.BAD_REQUEST,
         message: exception.message,

@@ -243,6 +243,15 @@ export class RoomsService {
       const checkPassword = await argon.verify(room.password, password);
       if (!checkPassword) throw new HttpException('Wrong password', 403);
     }
+    const isPrivate = await this.prisma.room.findMany({
+      where: {
+        id: idRoom,
+        type: {
+          in: ['private', 'dm']
+        }
+      },
+    });
+    if (isPrivate) throw new HttpException('Room is private', 403);
     await this.prisma.roomUser.create({
       data: {
         user_id: idUser,
@@ -324,7 +333,7 @@ export class RoomsService {
     const user = await this.prisma.roomUser.findFirst({
       where: { room_id: idRoom, user_id: idUser },
     });
-    if (!user) throw new HttpException('User not found', 404);
+    if (!user) throw new HttpException('User or room not found', 404);
     if (user.owner) {
       const admins = await this.prisma.roomUser.findMany({
         where: { room_id: idRoom, admin: true, user_id: { not: idUser } },
@@ -340,6 +349,13 @@ export class RoomsService {
     }
     if (user.ban) throw new HttpException('User is banned from this room', 403);
     if (user.mute) throw new HttpException('User is muted in this room', 403);
+     const isDm = await this.prisma.room.findMany({
+      where: {
+        id: idRoom,
+        type: 'dm'
+      },
+    });
+    if (isDm) throw new HttpException("Cannot leave a dm", 403);
     await this.prisma.roomUser.delete({
       where: {
         user_id_room_id: {
