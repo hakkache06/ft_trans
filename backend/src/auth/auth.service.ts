@@ -44,7 +44,8 @@ export class AuthService {
         name: data.displayname,
         avatar: data.image.versions.medium,
       };
-    } catch {
+    } catch (e) {
+      console.error(e)
       throw new BadRequestException('Bad request');
     }
   }
@@ -79,7 +80,6 @@ export class AuthService {
       expiresIn: '72h',
       secret,
     });
-    console.log(token);
     return {
       access_token: token,
     };

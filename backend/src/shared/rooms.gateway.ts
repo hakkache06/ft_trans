@@ -70,7 +70,6 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   handleConnection(client: Socket) {
     try {
-      console.log(`Connected ${client.id}`);
       const { id, tfa_required } = verify(
         client.handshake.auth.token,
         process.env.JWT_SECRET,
@@ -79,7 +78,6 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         tfa_required: boolean;
       };
       if (tfa_required) throw new Error('TFA required');
-      console.log(`User connected ${id}`);
       const socket_ids = new Set<string>(
         this.idUserToSocketIdMap.get(id) || [],
       );
@@ -95,7 +93,6 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   async handleDisconnect(client: Socket) {
     try {
-      console.log(`Disconnected: ${client.id}`);
       if (this.games.has(client.id)) this.games.delete(client.id);
 
       const idUser = this.fetchUser(client.id);
@@ -127,7 +124,6 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       },
     });
     if (roomUser.ban) throw new WsException("User can't join");
-    console.log(`User ${idUser} joined room : ${payload}`);
     client.join(payload);
   }
 
@@ -178,7 +174,6 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     const idUser = this.fetchUser(client.id);
     if (!idUser) return;
-    console.log(`User ${idUser} left room : ${payload}`);
     client.leave(payload);
   }
 
@@ -246,7 +241,6 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('game:accept')
   async acceptInvite(@ConnectedSocket() client: Socket) {
     const invite = Array.from(this.games).find(([, q]) => {
-      console.log(q);
       return q.opponentId === this.fetchUser(client.id);
     });
     if (!invite) return { done: false };
@@ -409,7 +403,6 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const player1_playing = this.isPlaying(game.player1_id, game.id);
       const player2_playing = this.isPlaying(game.player2_id, game.id);
       if (!player1_playing || !player2_playing) {
-        console.log('Player disconnected. Ending game.', game.id);
         if (player1_playing && !player2_playing) {
           await this.prisma.game.update({
             where: {
